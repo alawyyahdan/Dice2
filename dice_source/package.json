@@ -1,0 +1,15 @@
+{
+  "name": "dice2-root",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "bot",
+    "api"
+  ],
+  "scripts": {
+    "dev": "npx concurrently \"cd api && npm run dev\" \"cd bot && npm run dev\" \"cd dashboard && npm run dev\"",
+    "start:pm2": "pm2 start ecosystem.config.js",
+    "stop:pm2": "pm2 stop ecosystem.config.js",
+    "logs:pm2": "pm2 logs"
+  }
+}
