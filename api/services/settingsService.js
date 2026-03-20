@@ -39,6 +39,7 @@ class SettingsService {
       if (newData.bounds) config.bounds = { ...config.bounds, ...newData.bounds };
       if (newData.odds) config.odds = { ...config.odds, ...newData.odds };
       if (newData.strings) config.strings = { ...config.strings, ...newData.strings };
+      if (newData.paymentGateway) config.paymentGateway = newData.paymentGateway;
       
       // Top level fields
       if (newData.minBet !== undefined) config.minBet = newData.minBet;
@@ -50,6 +51,9 @@ class SettingsService {
       if (newData.isGroupActive !== undefined) {
         if (!config.isGroupActive && newData.isGroupActive) config.groupStartTime = Date.now();
         config.isGroupActive = newData.isGroupActive;
+      }
+      if (newData.isLeaderboardActive !== undefined) {
+        config.isLeaderboardActive = newData.isLeaderboardActive;
       }
       
       config.updatedAt = Date.now();

@@ -58,4 +58,30 @@ router.get('/status', requireAdmin, (req, res) => {
   });
 });
 
+// POST /api/settings/test-payment - Tes koneksi SiTranfer
+router.post('/test-payment', requireAdmin, async (req, res) => {
+  try {
+    const { paymentGateway } = req.body;
+    let merchantId = null;
+
+    if (paymentGateway && paymentGateway.sitranfer && paymentGateway.sitranfer.merchantId) {
+       merchantId = paymentGateway.sitranfer.merchantId;
+    }
+
+    if (!merchantId) {
+      return res.status(400).json({ error: 'Kunci Merchant ID belum diisi.' });
+    }
+
+    const paymentService = require('../services/paymentService');
+    const balance = await paymentService.checkBalance(merchantId);
+    if (balance) {
+      res.json({ success: true, message: `✅ Koneksi berhasil!\n💰 Saldo Merchant: Rp ${Number(balance.balance).toLocaleString('id-ID')}` });
+    } else {
+      res.status(400).json({ error: 'Koneksi gagal atau kredensial salah.' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

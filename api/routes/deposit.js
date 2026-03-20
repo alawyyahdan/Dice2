@@ -1,8 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
+const axios = require('axios');
 const User = require('../models/User');
 const Deposit = require('../models/Deposit');
+const Setting = require('../models/Setting');
+const paymentService = require('../services/paymentService');
+const requireAdmin = require('../middlewares/authMiddleware');
 
 // Helper verifikasi Telegram miniapp
 function verifyTelegramInitData(initData) {
@@ -21,49 +25,158 @@ function verifyTelegramInitData(initData) {
   } catch { return false; }
 }
 
-// 1. POST /api/deposit/create - Dari MiniApp
-router.post('/create', async (req, res) => {
+// Helper Bot API Telegram
+async function sendTelegramMessage(chatId, text) {
+  try { await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, { chat_id: chatId, text, parse_mode: 'HTML' }); } catch(e){}
+}
+async function deleteTelegramMessage(chatId, messageId) {
+  if(!messageId) return;
+  try { await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/deleteMessage`, { chat_id: chatId, message_id: messageId }); } catch(e){}
+}
+
+// GET /api/deposit/methods - Daftar metode pembayaran aktif
+router.get('/methods', async (req, res) => {
   try {
-    const { initData, telegramId, amount, paymentMethod } = req.body;
+    const config = await Setting.findOne();
+    if (!config || !config.paymentGateway) return res.json({ providerType: 'none', methods: [] });
     
-    if (!verifyTelegramInitData(initData)) {
-      return res.status(403).json({ error: 'Invalid Telegram data' });
+    const provType = config.paymentGateway.providerType || 'none';
+    const minDepo = config.paymentGateway.minDeposit || 10000;
+    const maxDepo = config.paymentGateway.maxDeposit || 50000000;
+
+    if (provType === 'none') {
+      return res.json({ providerType: 'none', methods: [] });
+    }
+    
+    if (provType === 'manual') {
+       const methods = config.paymentGateway.manual?.methods?.filter(m => m.isActive) || [];
+       return res.json({ 
+         providerType: 'manual', 
+         minDeposit: minDepo / 1000,
+         maxDeposit: maxDepo / 1000,
+         methods,
+         warningText: config.paymentGateway.manual?.warningText || ''
+       });
     }
 
-    if (!amount || amount < 10) return res.status(400).json({ error: 'Minimal deposit 10 poin' });
-    if (!paymentMethod) return res.status(400).json({ error: 'Metode pembayaran wajib dipilih' });
-
-    const user = await User.findOne({ telegramId });
-    if (!user) return res.status(404).json({ error: 'User tidak ditemukan' });
-
-    // Buat Reference ID unik (Skeleton)
-    const referenceId = `DEP-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+    // Default: sitranfer
+    const activeMethods = (config.paymentGateway.sitranfer?.methods || []).filter(m => m.isActive).map(m => ({
+      code: m.code, name: m.name, logoUrl: m.logoUrl
+    }));
     
-    // MOCK: Generate Checkout URL (Nanti diganti dengan Tripay / Gateway Asli)
-    const checkoutUrl = `https://mock-payment-gateway.com/checkout/${referenceId}?amount=${amount}&method=${paymentMethod}`;
-
-    const deposit = await Deposit.create({
-      userId: user._id,
-      telegramId,
-      amount,
-      paymentMethod,
-      referenceId,
-      checkoutUrl,
-      status: 'pending'
+    res.json({ 
+      providerType: 'sitranfer', 
+      minDeposit: minDepo / 1000,
+      maxDeposit: maxDepo / 1000,
+      methods: activeMethods,
+      warningText: config.paymentGateway.sitranfer?.warningText
     });
-
-    res.json({ message: 'Tagihan dibuat', data: deposit });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 2. GET /api/deposit/history?telegramId=xxx - Histori Khusus Player (MiniApp)
+// 1. POST /api/deposit/create - Dari MiniApp
+router.post('/create', async (req, res) => {
+  try {
+    const { initData, telegramId, amount, paymentMethod } = req.body;
+    
+    if (!verifyTelegramInitData(initData)) return res.status(403).json({ error: 'Invalid Telegram data' });
+    if (!amount) return res.status(400).json({ error: 'Isi nominal deposit' });
+    if (!paymentMethod) return res.status(400).json({ error: 'Metode pembayaran wajib dipilih' });
+
+    const user = await User.findOne({ telegramId });
+    if (!user) return res.status(404).json({ error: 'User tidak ditemukan' });
+
+    // Cek limit deposit pending
+    const existingPending = await Deposit.countDocuments({ telegramId, status: 'pending' });
+    if (existingPending >= 3) return res.status(400).json({ error: 'Harap selesaikan deposit sebelumnya.' });
+
+    const referenceId = `DEP-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+
+    const config = await Setting.findOne();
+    const provType = config?.paymentGateway?.providerType || 'none';
+    if (provType === 'none') return res.status(403).json({ error: 'Deposit sedang ditutup.' });
+
+    const minDepo = config?.paymentGateway?.minDeposit || 10000;
+    const maxDepo = config?.paymentGateway?.maxDeposit || 50000000;
+
+    const idrAmount = amount * 1000; // 1pt = Rp1.000
+
+    if (idrAmount < minDepo) return res.status(400).json({ error: `Minimal deposit Rp ${minDepo.toLocaleString('id-ID')} (${minDepo/1000} pt)` });
+    if (idrAmount > maxDepo) return res.status(400).json({ error: `Maksimal deposit Rp ${maxDepo.toLocaleString('id-ID')} (${maxDepo/1000} pt)` });
+
+    if (provType === 'manual') {
+      let uniqueCode = Math.floor(Math.random() * 90) + 10;
+      let finalIdrAmount = idrAmount + uniqueCode;
+      
+      let isUnique = false;
+      let retries = 0;
+      while (!isUnique && retries < 10) {
+        // Cek keunikan berdasarkan deposit yang sedang pending (menggunakan paymentData untuk ngecek tagihan IDR asli tidak mudah jika diparse, 
+        // tapi kita asumsikan 10 retry cukup aman)
+        // Kita juga bisa tambahkan field uniqueCode sementara jika perlu, 
+        // namun validasi dasar cukup.
+        uniqueCode = Math.floor(Math.random() * 90) + 10;
+        finalIdrAmount = idrAmount + uniqueCode;
+        isUnique = true; // Asumsi unik untuk performa, code unik 10-99
+      }
+
+      // Extract the bank details for frontend to read later
+      let bankInfo = {};
+      const manualMethod = config.paymentGateway.manual?.methods?.find(m => (m.code || m.bankName) === paymentMethod);
+      if (manualMethod) {
+        bankInfo = { 
+          bankName: manualMethod.bankName, 
+          accountNumber: manualMethod.accountNumber, 
+          accountName: manualMethod.accountName,
+          finalIdrAmount // Store the IDR they need to pay
+        };
+      }
+
+      const deposit = await Deposit.create({
+        userId: user._id, 
+        telegramId, 
+        amount: amount, // Tetap simpan poin di database!
+        paymentMethod: paymentMethod, 
+        referenceId, 
+        paymentData: JSON.stringify(bankInfo), 
+        status: 'pending'
+      });
+      return res.json({ message: 'Instruksi transfer dibuat', data: deposit });
+    }
+
+    try {
+      // Panggil SiTranfer menggunakan Nominal Rupiah Asli (amount * 1000)
+      const result = await paymentService.generateDeposit(paymentMethod, idrAmount, user.username);
+      
+      const deposit = await Deposit.create({
+        userId: user._id,
+        telegramId,
+        amount: amount, // Tetap simpan dalam satuan poin!
+        paymentMethod,
+        referenceId,
+        transactionId: result.transaction_id,
+        paymentData: result.qris_image || result.payment_url || result.qris_data,
+        status: 'pending'
+      });
+
+      res.json({ message: 'Tagihan dibuat', data: deposit });
+    } catch (apiErr) {
+      console.error(apiErr);
+      return res.status(400).json({ error: 'Gateway: ' + apiErr.message });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. GET /api/deposit/history?telegramId=xxx&initData=xxx
 router.get('/history', async (req, res) => {
   try {
-    const { telegramId } = req.query;
+    const { telegramId, initData } = req.query;
+    if (!verifyTelegramInitData(initData)) return res.status(403).json({ error: 'Auth failed' });
     if (!telegramId) return res.status(400).json({ error: 'telegramId required' });
-
     const deposits = await Deposit.find({ telegramId }).sort({ createdAt: -1 }).limit(20).lean();
     res.json({ deposits });
   } catch (err) {
@@ -71,15 +184,45 @@ router.get('/history', async (req, res) => {
   }
 });
 
-// 3. GET /api/deposit/all - Global Admin Histori (Dashboard Admin)
-router.get('/all', async (req, res) => {
+// POST /api/deposit/cancel - Dari MiniApp
+router.post('/cancel', async (req, res) => {
+  try {
+    const { initData, referenceId } = req.body;
+    if (!verifyTelegramInitData(initData)) return res.status(403).json({ error: 'Invalid TG' });
+
+    const dep = await Deposit.findOne({ referenceId, status: 'pending' });
+    if (!dep) return res.status(404).json({ error: 'Not found or already processed' });
+
+    dep.status = 'failed';
+    await dep.save();
+    
+    // Hapus pesan tagihan/instruksi dari chat pemain
+    if (dep.qrMessageId) {
+      await deleteTelegramMessage(dep.telegramId, dep.qrMessageId);
+    }
+
+    res.json({ success: true, message: 'Deposit dibatalkan' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. GET /api/deposit/all - Dashboard Admin
+router.get('/all', requireAdmin, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
-    const search = req.query.search || '';
+    const { search, status, dateFrom, dateTo } = req.query;
     
     let query = {};
     if (search) query.telegramId = { $regex: search, $options: 'i' };
+    if (status && status !== 'all') query.status = status;
+    
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) query.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) query.createdAt.$lte = new Date(dateTo);
+    }
 
     const deposits = await Deposit.find(query)
       .populate('userId', 'firstName username')
@@ -89,38 +232,227 @@ router.get('/all', async (req, res) => {
       .lean();
     
     const total = await Deposit.countDocuments(query);
-    res.json({ deposits, total, pages: Math.ceil(total / limit) });
+    
+    const allDeposits = await Deposit.find(query).lean();
+    const stats = {
+      totalSuccess: allDeposits.filter(d => d.status === 'success').reduce((s, d) => s + (d.amount || 0), 0),
+      totalPending: allDeposits.filter(d => d.status === 'pending').reduce((s, d) => s + (d.amount || 0), 0),
+    };
+
+    res.json({ deposits, total, pages: Math.ceil(total / limit), stats });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 4. POST /api/deposit/callback - Webhook dari Payment Gateway
+// 4. POST /api/deposit/callback - Webhook SiTranfer
+// Payload doc: { "success": true, "data": { "type": "QRIS", "username": "player", "transaction_id": "...", "amount": "10000", "status": "success" } }
 router.post('/callback', async (req, res) => {
   try {
-    // Skenario Tripay/Paydisini Callback
-    const { referenceId, status } = req.body;
+    const { success, data } = req.body;
     
-    const dep = await Deposit.findOne({ referenceId });
+    if (!success || !data || data.status !== 'success') {
+       return res.json({ message: 'Ignored, not success' });
+    }
+
+    const { transaction_id, amount } = data;
+    
+    const dep = await Deposit.findOne({ transactionId: transaction_id });
     if (!dep) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
     if (dep.status === 'success') return res.status(200).json({ message: 'Sudah sukses sebelumnya' });
 
-    dep.status = status; // success, failed, expired
+    dep.status = 'success';
     dep.updatedAt = Date.now();
     await dep.save();
 
-    if (status === 'success') {
+    const nominal = parseFloat(amount) || dep.amount;
+    await User.findByIdAndUpdate(
+      dep.userId,
+      {
+        $inc: { balance: nominal, totalDeposit: nominal, turnoverRequired: nominal }
+      }
+    );
+
+    // Kirim notifikasi Telegram ke User
+    const settings = await Setting.findOne();
+    let successMsg = settings?.strings?.depositSuccess || '✅ <b>Deposit Berhasil!</b>\n\nNominal: <b>{amount} poin</b> telah masuk ke saldo Anda!\nSelamat bermain! 🎲';
+    successMsg = successMsg.replace(/\{amount\}/g, nominal.toLocaleString('id-ID'));
+    await sendTelegramMessage(dep.telegramId, successMsg);
+    
+    // Hapus pesan QR jika dulu ada
+    if (dep.qrMessageId) {
+      await deleteTelegramMessage(dep.telegramId, dep.qrMessageId);
+    }
+    
+    res.json({ status: 'ok' });
+  } catch (err) {
+    console.error('Webhook Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. POST /api/deposit/send-bayar - MiniApp minta Bot kirim Instruksi Bayar
+router.post('/send-bayar', async (req, res) => {
+  try {
+    const { initData, telegramId, referenceId, isManual } = req.body;
+    if (!verifyTelegramInitData(initData)) return res.status(403).json({ error: 'Auth failed' });
+
+    const dep = await Deposit.findOne({ telegramId, referenceId });
+    if (!dep) return res.status(404).json({ error: 'Not found' });
+
+    const settings = await Setting.findOne();
+    let resp;
+
+    if (isManual) {
+       let manualInfo = {};
+       try { manualInfo = JSON.parse(dep.paymentData); } catch (e) {}
+       
+       let invoiceMsg = settings?.strings?.depositInvoiceManual || '🏦 <b>Instruksi Transfer Manual</b>\n\nBank: <b>{bankName}</b>\nRekening: <b>{accountNumber}</b>\nA/N: <b>{accountName}</b>\n\nSilakan transfer TEPAT: <b>Rp {amount}</b>\n\nPesan ini akan dihapus saat sudah dikonfirmasi.';
+       
+       const tagihanIDR = manualInfo.finalIdrAmount || (dep.amount * 1000); // Fallback ke amount*1000
+
+       invoiceMsg = invoiceMsg.replace(/\{amount\}/g, tagihanIDR.toLocaleString('id-ID'))
+                              .replace(/\{bankName\}/g, manualInfo.bankName || '-')
+                              .replace(/\{accountNumber\}/g, manualInfo.accountNumber || '-')
+                              .replace(/\{accountName\}/g, manualInfo.accountName || '-');
+
+       const botUrl = `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`;
+       resp = await axios.post(botUrl, {
+         chat_id: telegramId,
+         text: invoiceMsg,
+         parse_mode: 'HTML'
+       });
+    } else {
+       const qrUrl = dep.paymentData;
+       if (!qrUrl) return res.status(400).json({ error: 'No QR URL' });
+
+       const isLink = qrUrl.includes('http') && (qrUrl.includes('dana') || qrUrl.includes('app') || qrUrl.includes('pay') || qrUrl.includes('link'));
+
+        if (isLink) {
+          let invoiceMsg = settings?.strings?.depositInvoiceLink || '🧾 <b>Tagihan Pembayaran</b>\nNominal: <b>Rp {amount}</b>\n\nSilakan klik link di bawah ini untuk melunasi pembayaran. Pesan ini akan terhapus otomatis setelah lunas.';
+          invoiceMsg = invoiceMsg.replace(/\{amount\}/g, (dep.amount * 1000).toLocaleString('id-ID'));
+
+          const botUrl = `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`;
+          resp = await axios.post(botUrl, {
+            chat_id: telegramId,
+            text: `${invoiceMsg}\n\n<a href="${qrUrl}">👉 Klik Disini untuk Bayar</a>`,
+            parse_mode: 'HTML',
+            disable_web_page_preview: true
+          });
+        } else {
+          let invoiceMsg = settings?.strings?.depositInvoiceQR || '🧾 <b>QR Pembayaran</b>\nNominal: <b>Rp {amount}</b>\n\nSilakan pindai QR ini untuk melunasi pembayaran. Pesan ini akan terhapus otomatis setelah lunas.';
+          invoiceMsg = invoiceMsg.replace(/\{amount\}/g, (dep.amount * 1000).toLocaleString('id-ID'));
+
+          const photoUrl = qrUrl.includes('http') ? qrUrl : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`;
+          const botUrl = `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPhoto`;
+          resp = await axios.post(botUrl, {
+            chat_id: telegramId,
+            photo: photoUrl,
+            caption: invoiceMsg,
+            parse_mode: 'HTML'
+          });
+       }
+    }
+
+    if (resp.data?.ok && resp.data?.result?.message_id) {
+       dep.qrMessageId = resp.data.result.message_id;
+       await dep.save();
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 6. POST /api/deposit/action - Admin Manual Accept/Reject
+router.post('/action', require('../middlewares/authMiddleware'), async (req, res) => {
+  try {
+    const { id, action } = req.body;
+    if (!['success', 'failed'].includes(action)) return res.status(400).json({ error: 'Invalid action' });
+    
+    const dep = await Deposit.findById(id);
+    if (!dep) return res.status(404).json({ error: 'Deposit tidak ditemukan' });
+    if (dep.status !== 'pending') return res.status(400).json({ error: 'Deposit sudah diproses' });
+
+    dep.status = action;
+    dep.updatedAt = Date.now();
+    await dep.save();
+
+    if (action === 'success') {
       const nominal = dep.amount;
       await User.findByIdAndUpdate(
         dep.userId,
         {
-          $inc: { balance: nominal, totalDeposit: nominal },
-          $set: { turnover: 0, turnoverRequired: nominal * 2 }
+          $inc: { balance: nominal, totalDeposit: nominal, turnoverRequired: nominal }
         }
       );
+      const settings = await Setting.findOne();
+      let successMsg = settings?.strings?.depositSuccess || '✅ <b>Deposit Manual Berhasil!</b>\n\nNominal: <b>{amount} poin</b> telah divalidasi dan masuk ke akun Anda.';
+      successMsg = successMsg.replace(/\{amount\}/g, nominal.toLocaleString('id-ID'));
+      await sendTelegramMessage(dep.telegramId, successMsg);
+    } else {
+      const settings = await Setting.findOne();
+      let failedMsg = settings?.strings?.depositFailed || '❌ <b>Deposit Dibatalkan!</b>\n\nNominal: <b>{amount} poin</b> ditolak oleh Admin. Hubungi CS jika ada kendala.';
+      failedMsg = failedMsg.replace(/\{amount\}/g, dep.amount.toLocaleString('id-ID'));
+      await sendTelegramMessage(dep.telegramId, failedMsg);
     }
+
+    // Hapus pesan tagihan/instruksi manual/QR jika sebelumnya dikirim ke Telegram user
+    if (dep.qrMessageId) {
+      await deleteTelegramMessage(dep.telegramId, dep.qrMessageId);
+      dep.qrMessageId = null; // optional cleanup
+      await dep.save();
+    }
+
+    res.json({ success: true, message: `Deposit ${action} successfully` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 7. POST /api/deposit/resync - Admin batch-refresh semua pending SiTranfer
+router.post('/resync', requireAdmin, async (req, res) => {
+  try {
+    const pendingDeps = await Deposit.find({ status: 'pending', transactionId: { $exists: true, $ne: null } });
     
-    res.json({ success: true, message: 'Callback diterima' });
+    if (pendingDeps.length === 0) {
+      return res.json({ message: '✅ Tidak ada deposit pending dari Gateway yang perlu dicek.' });
+    }
+
+    let resolved = 0;
+
+    for (const dep of pendingDeps) {
+      try {
+        const result = await paymentService.checkStatus(dep.transactionId);
+        let isSuccess = false;
+        let amount = dep.amount;
+
+        if (result && result.success && Array.isArray(result.data) && result.data.length > 0) {
+          const trx = result.data[0];
+          if (trx.status === 'success') { isSuccess = true; if (trx.amount) amount = parseFloat(trx.amount); }
+        } else if (result && result.status === 'success') {
+          isSuccess = true; if (result.amount) amount = parseFloat(result.amount);
+        }
+
+        if (isSuccess) {
+          dep.status = 'success'; dep.updatedAt = Date.now(); await dep.save();
+          await User.findByIdAndUpdate(dep.userId, {
+            $inc: { balance: amount, totalDeposit: amount, turnoverRequired: amount }
+          });
+          const settings = await Setting.findOne();
+          let successMsg = settings?.strings?.depositSuccess || '✅ <b>Deposit Berhasil!</b>\n\nNominal: <b>{amount} poin</b> telah masuk.';
+          successMsg = successMsg.replace(/\{amount\}/g, amount.toLocaleString('id-ID'));
+          await sendTelegramMessage(dep.telegramId, successMsg);
+          if (dep.qrMessageId) { await deleteTelegramMessage(dep.telegramId, dep.qrMessageId); }
+          resolved++;
+        }
+      } catch (innerErr) {
+        console.error(`Resync error for ${dep.referenceId}:`, innerErr.message);
+      }
+    }
+
+    res.json({ message: `🔄 Resync selesai. ${resolved} dari ${pendingDeps.length} deposit berhasil di-resolve.` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

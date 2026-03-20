@@ -1,18 +1,40 @@
 const { Markup } = require('telegraf');
+const { miniAppButton } = require('./miniappLink');
+const settingsService = require('../../api/services/settingsService');
 
-const mainMenuKeyboard = Markup.inlineKeyboard([
-  [
-    Markup.button.callback('📊 Saldo', 'menu_saldo'),
-    Markup.button.callback('📜 History Taruhan', 'menu_history')
-  ],
-  [
-    Markup.button.webApp('💸 Withdraw', process.env.MINIAPP_URL || 'https://yourdomain.com/miniapp'),
-    Markup.button.url('👥 Ke Grup', process.env.GROUP_LINK || 'https://t.me/yourgrouplink')
-  ],
-  [
-    Markup.button.url('📞 Kontak CS', `https://t.me/${(process.env.CS_USERNAME || '@cs').replace('@', '')}`)
-  ]
-]);
+/**
+ * Build keyboard menu utama.
+ * Perlu bot instance agar bisa generate link yang benar.
+ */
+function buildMainMenu(bot) {
+  const wdBtn      = miniAppButton(bot, '💸 WD / Deposit', 'withdraw');
+  const saldoBtn   = miniAppButton(bot, '📊 Saldo', 'withdraw');
+  const historyBtn = miniAppButton(bot, '📜 History', 'history');
+
+  const toMarkup = (b) => b.type === 'web_app'
+    ? Markup.button.webApp(b.text, b.url)
+    : Markup.button.url(b.text, b.url);
+
+  const cfg = settingsService.getSettings();
+  const groupUrl = cfg?.strings?.group_link || process.env.GROUP_LINK || 'https://t.me/yourgrouplink';
+  const csRaw = cfg?.strings?.cs_contact_link || process.env.CS_USERNAME || '@cs';
+  const csUrl = csRaw.startsWith('http') ? csRaw : `https://t.me/${csRaw.replace('@', '')}`;
+
+  return Markup.inlineKeyboard([
+    [
+      toMarkup(saldoBtn),
+      toMarkup(historyBtn)
+    ],
+    [
+      toMarkup(wdBtn),
+      Markup.button.url('👥 Ke Grup', groupUrl)
+    ],
+    [
+      Markup.button.url('📞 Kontak CS', csUrl)
+    ]
+  ]);
+}
+
 
 const rollChoiceKeyboard = Markup.inlineKeyboard([
   [
@@ -29,4 +51,4 @@ const rollDiceReplyKeyboard = Markup.keyboard([
 // Hapus Reply Keyboard setelah selesai
 const removeRollKeyboard = Markup.removeKeyboard();
 
-module.exports = { mainMenuKeyboard, rollChoiceKeyboard, rollDiceReplyKeyboard, removeRollKeyboard };
+module.exports = { buildMainMenu, rollChoiceKeyboard, rollDiceReplyKeyboard, removeRollKeyboard };

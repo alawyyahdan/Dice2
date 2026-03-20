@@ -7,11 +7,7 @@ const Bet = require('../models/Bet');
 
 // Verifikasi Telegram initData menggunakan HMAC-SHA256
 function verifyTelegramInitData(initData) {
-  console.log('--- VERIFY INIT DATA ---');
-  console.log('DEBUG ENV:', process.env.DEBUG);
-  console.log('initData:', initData);
-
-  if (String(process.env.DEBUG).trim() === 'true' && initData === 'mock-debug-init-data') return true; // BYPASS HANYA JIKA DEBUG=TRUE
+  if (process.env.DEBUG === 'true' && initData === 'mock-debug-init-data') return true;
 
   try {
     const urlParams = new URLSearchParams(initData);
@@ -39,14 +35,27 @@ function verifyTelegramInitData(initData) {
   }
 }
 
-// GET /api/miniapp/user-info?telegramId=xxx
+// GET /api/miniapp/user-info?telegramId=xxx&initData=xxx
 router.get('/user-info', async (req, res) => {
   try {
-    const { telegramId } = req.query;
+    const { telegramId, initData, photoUrl } = req.query;
+    if (!verifyTelegramInitData(initData)) return res.status(403).json({ error: 'Auth failed' });
     if (!telegramId) return res.status(400).json({ error: 'telegramId required' });
 
-    const user = await User.findOne({ telegramId });
+    let update = {};
+    if (photoUrl && photoUrl !== 'undefined') update.photoUrl = photoUrl;
+
+    const user = await User.findOneAndUpdate(
+       { telegramId },
+       Object.keys(update).length > 0 ? { $set: update } : {},
+       { new: true }
+    );
     if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const Setting = require('../models/Setting');
+    const config = await Setting.findOne();
+    const withdrawConfig = config?.paymentGateway?.withdraw || {};
+    const activeBanks = withdrawConfig.banks?.filter(b => b.isActive) || [];
 
     res.json({
       balance: user.balance || 0,
@@ -54,7 +63,9 @@ router.get('/user-info', async (req, res) => {
       turnoverRequired: Math.max(0, Math.floor(user.turnoverRequired || 0)),
       turnoverMet: (user.turnoverRequired || 0) <= 0,
       turnoverRemaining: Math.max(0, Math.floor(user.turnoverRequired || 0)),
-      banks: user.banks || []
+      banks: user.banks || [],
+      activeBanks: activeBanks,
+      isLeaderboardActive: config?.isLeaderboardActive !== false
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -108,16 +119,17 @@ router.post('/add-bank', async (req, res) => {
   }
 });
 
-// GET /api/miniapp/bets?telegramId=xxx
+// GET /api/miniapp/bets?telegramId=xxx&initData=xxx
 router.get('/bets', async (req, res) => {
   try {
-    const { telegramId } = req.query;
+    const { telegramId, initData } = req.query;
+    if (!verifyTelegramInitData(initData)) return res.status(403).json({ error: 'Auth failed' });
     if (!telegramId) return res.status(400).json({ error: 'telegramId required' });
 
-    // Ambil 20 taruhan terakhir
+    // Ambil 10 taruhan terakhir
     const bets = await Bet.find({ telegramId })
       .sort({ createdAt: -1 })
-      .limit(20)
+      .limit(10)
       .lean();
 
     res.json({ bets });
@@ -151,20 +163,81 @@ router.post('/withdraw', async (req, res) => {
       return res.status(400).json({ error: `Syarat Turnover belum terpenuhi, Mainkan ${remaining} pt lagi.` });
     }
 
-    if (!bankName || !accountNumber || !accountName) {
-      return res.status(400).json({ error: 'Data rekening tujuan tidak lengkap' });
+    const Setting = require('../models/Setting');
+    const paymentService = require('../services/paymentService');
+    const config = await Setting.findOne();
+    const withdrawConfig = config?.paymentGateway?.withdraw || {};
+
+    const minWd = withdrawConfig.minWithdraw || 20;
+    const maxWd = withdrawConfig.maxWithdraw || 10000;
+    
+    if (nominal < minWd) return res.status(400).json({ error: `Minimal withdraw ${minWd} pt` });
+    if (nominal > maxWd) return res.status(400).json({ error: `Maksimal withdraw ${maxWd} pt` });
+
+    if (withdrawConfig.providerType === 'none') {
+      return res.status(400).json({ error: 'Sistem penarikan saat ini dinonaktifkan oleh administrator.' });
+    }
+
+    const activeBanks = withdrawConfig.banks?.filter(b => b.isActive) || [];
+    const isValidBank = activeBanks.find(b => b.code === bankName || b.name === bankName);
+    
+    // Fallback allowing any if exact bank list is empty/disabled, otherwise strict check
+    if (activeBanks.length > 0 && !isValidBank) {
+      return res.status(400).json({ error: 'Bank tujuan tidak mendukung auto-withdraw atau sedang tidak aktif.' });
+    }
+
+    // Kurangi saldo
+    user.balance -= nominal;
+    await user.save();
+
+    let wdStatus = 'pending';
+    let wdNotes = '';
+
+    const isAutoPgo = withdrawConfig.providerType === 'sitranfer' && nominal <= (withdrawConfig.autoWdLimit || 50);
+
+    if (isAutoPgo) {
+      try {
+        const idrNominal = nominal * 1000;
+        const bankTargetCode = isValidBank ? isValidBank.code : bankName;
+        const resp = await paymentService.processPayout(user.username || telegramId, accountName, accountNumber, bankTargetCode, idrNominal);
+        wdStatus = 'approved';
+        wdNotes = `[Auto-WD Sukses] TRX ID: ${resp.transaction_id || 'N/A'}`;
+      } catch (e) {
+        user.balance += nominal;
+        await user.save();
+        return res.status(400).json({ error: 'Auto-Withdraw PGO Gagal: ' + e.message });
+      }
     }
 
     const wd = await Withdraw.create({
       userId: user._id,
       telegramId,
       amount: nominal,
-      bankName,
+      bankName: isValidBank ? isValidBank.code : bankName,
       accountNumber,
-      accountName
+      accountName,
+      status: wdStatus,
+      adminNote: wdNotes,
+      processedAt: wdStatus === 'approved' ? new Date() : null
     });
 
-    res.json({ message: 'Permintaan withdraw berhasil dikirim', withdraw: wd });
+    let msg = 'Permintaan withdraw dikirim dan masuk antrean manual.';
+    if (wdStatus === 'approved') msg = 'Pencairan Otomatis (Auto-WD) berhasil dan dana sedang masuk ke rekening Anda!';
+
+    res.json({ message: msg, withdraw: wd });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/miniapp/withdraw-history
+router.get('/withdraw-history', async (req, res) => {
+  try {
+    const { telegramId, initData } = req.query;
+    if (!verifyTelegramInitData(initData)) return res.status(403).json({ error: 'Auth failed' });
+    if (!telegramId) return res.status(400).json({ error: 'telegramId required' });
+    const withdraws = await Withdraw.find({ telegramId }).sort({ createdAt: -1 }).limit(50).lean();
+    res.json({ withdraws });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

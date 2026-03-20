@@ -28,8 +28,8 @@ async function apiFetch(endpoint, options = {}) {
 }
 
 export const api = {
-  login: (username, password) =>
-    apiFetch('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
+  login: (username, password, token) =>
+    apiFetch('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password, token }) }),
 
   getUsers: (params = {}) =>
     apiFetch(`/api/users?${new URLSearchParams(params)}`),
@@ -51,6 +51,9 @@ export const api = {
 
   getWithdraws: (params = {}) =>
     apiFetch(`/api/withdraw?${new URLSearchParams(params)}`),
+
+  getDeposits: (params = {}) =>
+    apiFetch(`/api/deposit/all?${new URLSearchParams(params)}`),
 
   approveWithdraw: (id, adminNote) =>
     apiFetch(`/api/withdraw/${id}/approve`, { method: 'PATCH', body: JSON.stringify({ adminNote }) }),
@@ -78,4 +81,43 @@ export const api = {
 
   getSystemStatus: () =>
     apiFetch('/api/settings/status'),
+
+  testPayment: (data) =>
+    apiFetch('/api/settings/test-payment', { method: 'POST', body: JSON.stringify(data) }),
+
+  depositAction: (id, action) =>
+    apiFetch('/api/deposit/action', { method: 'POST', body: JSON.stringify({ id, action }) }),
+
+  depositResync: () =>
+    apiFetch('/api/deposit/resync', { method: 'POST' }),
+
+  getAdminProfile: () =>
+    apiFetch('/api/admin/profile'),
+
+  updateAdminProfile: (data) =>
+    apiFetch('/api/admin/profile', { method: 'PUT', body: JSON.stringify(data) }),
+
+  setup2FA: () =>
+    apiFetch('/api/admin/2fa/setup', { method: 'POST' }),
+
+  verify2FA: (token) =>
+    apiFetch('/api/admin/2fa/verify', { method: 'POST', body: JSON.stringify({ token }) }),
+
+  disable2FA: (token) =>
+    apiFetch('/api/admin/2fa/disable', { method: 'POST', body: JSON.stringify({ token }) }),
+
+  getLeaderboardAdmin: (filter) =>
+    apiFetch(`/api/leaderboard/admin?filter=${filter}`),
+
+  getAnalytics: () =>
+    apiFetch('/api/analytics'),
+
+  getMaintenanceStats: () =>
+    apiFetch('/api/admin/system/stats'),
+
+  clearSystemCache: () =>
+    apiFetch('/api/admin/system/clear-cache', { method: 'POST' }),
+
+  resetDatabase: (data) =>
+    apiFetch('/api/admin/system/reset-db', { method: 'POST', body: JSON.stringify(data) }),
 };

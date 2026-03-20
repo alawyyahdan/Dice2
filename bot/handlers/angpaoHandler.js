@@ -4,9 +4,6 @@ const Angpao = require('../../api/models/Angpao');
 const crypto = require('crypto');
 const settingsService = require('../../api/services/settingsService');
 
-// Temporary placeholder banner for Angpao
-const ANGPAO_IMAGE = 'https://img.freepik.com/foto-gratis/gadis-asia-mengenakan-gaun-qipao-tradisional-memegang-angpao-atau-hadiah-uang-paket-merah_74952-3362.jpg?semt=ais_rp_progressive&w=740&q=80';
-
 function registerAngpaoHandler(bot) {
   // Format: PAO <nominal> <jumlah_orang> ATAU PAOF <nominal> <jumlah_orang>
   bot.hears(/^(PAO|PAOF)\s+(\d+(?:\.\d+)?)\s+(\d+)$/i, async (ctx) => {
@@ -65,8 +62,8 @@ function registerAngpaoHandler(bot) {
         ]]
       };
 
-      // Send Angpao ke chat saat ini saja (tidak dibroadcast)
-      await ctx.replyWithPhoto(ANGPAO_IMAGE, {
+      const angpaoImageUrl = settingsService.getString('angpao_image');
+      await ctx.replyWithPhoto(angpaoImageUrl, {
         caption,
         parse_mode: 'HTML',
         reply_markup: keyboard

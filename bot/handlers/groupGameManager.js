@@ -5,6 +5,7 @@ const { calculateBet, getMatchingCategories } = require('../utils/diceCalculator
 const { generateTrendImage } = require('../utils/trendGenerator');
 const { Markup } = require('telegraf');
 const settingsService = require('../../api/services/settingsService');
+const { miniAppButton } = require('../utils/miniappLink');
 
 const activeGroups = new Set();
 
@@ -184,14 +185,32 @@ function registerGroupGameManager(bot) {
           await bot.telegram.sendMessage(groupId, resultMsg, { parse_mode: 'Markdown' });
         }
 
-        // Open next round
-        const botUsername = bot.botInfo ? bot.botInfo.username : '';
-        const withdrawLink = botUsername ? `https://t.me/${botUsername}?start=withdraw` : (process.env.MINIAPP_URL || 'https://yourdomain.com/miniapp');
-        
-        const inlineKeyboard = Markup.inlineKeyboard([
-          [Markup.button.url('💸 Tarik Saldo (Withdraw)', withdrawLink)],
-          [Markup.button.url('📞 Kontak CS', `https://t.me/${(process.env.CS_USERNAME || '@cs').replace('@', '')}`)]
-        ]);
+        // Open next round — pakai miniAppButton agar konsisten, dan cek setting leaderboard
+        const config = settingsService.getSettings();
+        const depoBtn    = miniAppButton(bot, '💳 DEPO/WD', 'deposit');
+        const historyBtn = miniAppButton(bot, '📜 History', 'history');
+        const saldoBtn   = miniAppButton(bot, '💰 Saldo', 'withdraw');
+
+        const toBtn = (b) => b.type === 'web_app'
+          ? { text: b.text, web_app: { url: b.url } }
+          : { text: b.text, url: b.url };
+
+        const row2 = [toBtn(saldoBtn)];
+        if (config?.isLeaderboardActive !== false) {
+          const ldbBtn = miniAppButton(bot, '🏆 Leaderboard', 'leaderboard');
+          row2.push(toBtn(ldbBtn));
+        }
+
+        const csRaw = config?.strings?.cs_contact_link || process.env.CS_USERNAME || '@cs';
+        const csUrl = csRaw.startsWith('http') ? csRaw : `https://t.me/${csRaw.replace('@', '')}`;
+
+        const inlineKeyboardArr = [
+          [ toBtn(depoBtn), toBtn(historyBtn) ],
+          row2,
+          [ { text: '📞 Kontak CS', url: csUrl } ]
+        ];
+
+        const inlineKeyboard = { reply_markup: { inline_keyboard: inlineKeyboardArr } };
 
         await bot.telegram.sendMessage(
           groupId,

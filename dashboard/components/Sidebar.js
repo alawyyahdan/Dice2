@@ -5,6 +5,8 @@ import { clearToken } from '@/lib/auth';
 
 const navItems = [
   { href: '/dashboard', label: '📊 Overview' },
+  { href: '/dashboard/analytics', label: '📈 Analytics & PnL' },
+  { href: '/dashboard/leaderboard', label: '🏆 Leaderboard' },
   { href: '/dashboard/users', label: '👥 Data Users' },
   { href: '/dashboard/bets', label: '🎲 Histori Taruhan' },
   { href: '/dashboard/deposit', label: '📥 Data Deposit' },

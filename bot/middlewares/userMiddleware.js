@@ -5,7 +5,7 @@ const userMiddleware = async (ctx, next) => {
   if (!from) return next();
 
   try {
-    let user = await User.findOneAndUpdate(
+    const result = await User.findOneAndUpdate(
       { telegramId: String(from.id) },
       {
         $set: {
@@ -22,10 +22,16 @@ const userMiddleware = async (ctx, next) => {
           cashback: 0
         }
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true, includeResultMetadata: true }
     );
 
+    const user = result.value;
     ctx.dbUser = user;
+    if (result.lastErrorObject && !result.lastErrorObject.updatedExisting) {
+      ctx.isNewUser = true;
+    } else {
+      ctx.isNewUser = false;
+    }
     if (user.isBanned) {
       if (ctx.chat?.type === 'private') {
         return ctx.reply('❌ Anda telah di-banned dari menggunakan layanan bot ini.');

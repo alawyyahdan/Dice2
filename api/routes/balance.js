@@ -20,10 +20,10 @@ router.patch('/adjust', auth, async (req, res) => {
       $inc: { balance: Number(amount) }
     };
     
-    // Tambah syarat TO 2x lipat jika di-centang dan jika amount positif (penambahan saldo)
+    // Tambah syarat TO jika di-centang dan jika amount positif (penambahan saldo)
+    // turnoverRequired += amount — progres yang sudah dibet user tetap terhitung
     if (includeTurnover && Number(amount) > 0) {
-      const currentTO = user.turnoverRequired > 0 ? user.turnoverRequired : 0;
-      updateFields.$set = { turnoverRequired: currentTO + (Number(amount) * 2) }; // default 2x
+      updateFields.$inc.turnoverRequired = Number(amount);
     }
 
     const updatedUser = await User.findOneAndUpdate(
@@ -31,9 +31,6 @@ router.patch('/adjust', auth, async (req, res) => {
       updateFields,
       { new: true }
     );
-
-
-    console.log(`Balance adjusted: ${telegramId} ${amount > 0 ? '+' : ''}${amount} (${note})`);
 
     res.json({ updatedBalance: user.balance, user });
   } catch (err) {

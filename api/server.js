@@ -13,10 +13,13 @@ const miniappRoute = require('./routes/miniapp');
 const depositRoute = require('./routes/deposit');
 const settingsRoute = require('./routes/settings');
 const angpaoRoute = require('./routes/angpao');
+const adminRoute = require('./routes/admin');
+const analyticsRoute = require('./routes/analytics');
+const leaderboardRoute = require('./routes/leaderboard');
 const settingsService = require('./services/settingsService');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.API_PORT || 3001;
 
 // Middleware
 app.use(cors());
@@ -35,7 +38,11 @@ app.use('/api/miniapp', miniappRoute);
 app.use('/api/deposit', depositRoute);
 app.use('/api/settings', settingsRoute);
 app.use('/api/angpao', angpaoRoute);
+app.use('/api/admin', adminRoute);
+app.use('/api/analytics', analyticsRoute);
+app.use('/api/leaderboard', leaderboardRoute);
 
+app.get('/', (req, res) => res.send('<html style="background:#0f172a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;"><h2>🚀 Dice API Server (V2) is Running!</h2></html>'));
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // Connect DB & Start Server
