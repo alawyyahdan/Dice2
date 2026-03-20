@@ -51,10 +51,9 @@ router.get('/user-info', async (req, res) => {
     );
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const Setting = require('../models/Setting');
-    const config = await Setting.findOne();
+    const config = require('../services/settingsService').getSettings();
     const withdrawConfig = config?.paymentGateway?.withdraw || {};
-    const activeBanks = withdrawConfig.banks?.filter(b => b.isActive) || [];
+    const activeBanks = (withdrawConfig.banks || []).filter(b => b.isActive != false);
 
     res.json({
       balance: user.balance || 0,
@@ -64,6 +63,7 @@ router.get('/user-info', async (req, res) => {
       turnoverRemaining: Math.max(0, Math.floor(user.turnoverRequired || 0)),
       banks: user.banks || [],
       activeBanks: activeBanks,
+      csContactLink: config?.strings?.cs_contact_link || '',
       isLeaderboardActive: config?.isLeaderboardActive !== false
     });
   } catch (err) {

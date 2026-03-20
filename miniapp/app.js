@@ -221,8 +221,23 @@ function renderBanks() {
     wdFormArea.style.display = 'none';
     document.getElementById('add-bank-form').style.display = 'block';
     document.getElementById('btn-show-add-bank').style.display = 'none';
+    // FIX: Populate dropdown immediately if showing form for first-time user
+    populateBankSelect();
   } else {
-    document.getElementById('btn-show-add-bank').style.display = userInfo.banks.length >= 3 ? 'none' : 'block';
+    // User already has 1 bank — show button but clicking it redirects to CS
+    const addBtn = document.getElementById('btn-show-add-bank');
+    addBtn.style.display = 'block';
+    addBtn.textContent = '+ Tambah Rekening';
+    addBtn.onclick = () => {
+      const csRaw = (userInfo.csContactLink || '').trim();
+      const csUrl = csRaw
+        ? (csRaw.startsWith('http') ? csRaw : `https://t.me/${csRaw.replace('@', '')}`)
+        : 'https://t.me/AdminDice';
+      if (confirm('Untuk mengubah atau menambah rekening, silakan hubungi CS kami. Buka chat CS sekarang?')) {
+        window.open(csUrl, '_blank');
+      }
+    };
+
     userInfo.banks.forEach((bank, idx) => {
       const el = document.createElement('div');
       const isSelected = (selectedBankIndex === idx);
@@ -250,18 +265,26 @@ function renderBanks() {
   }
 }
 
+function populateBankSelect() {
+  const select = document.getElementById('new-bank-name');
+  if (!select) return;
+  
+  // Always repopulate to avoid empty dropdown bug
+  select.innerHTML = '<option value="">-- Pilih Bank / E-Wallet --</option>';
+  if (userInfo.activeBanks && userInfo.activeBanks.length > 0) {
+    userInfo.activeBanks.forEach(b => {
+      select.innerHTML += `<option value="${b.code}">${b.name}</option>`;
+    });
+  } else {
+    select.innerHTML += '<option value="" disabled>Tidak ada bank aktif — atur di Settings</option>';
+  }
+}
+
 function toggleAddBankForm() {
   const f = document.getElementById('add-bank-form');
   f.style.display = f.style.display === 'none' || f.style.display === '' ? 'block' : 'none';
   if (f.style.display === 'block') {
-    const select = document.getElementById('new-bank-name');
-    if (select.options.length === 0 && userInfo.activeBanks) {
-      let opts = '<option value="">-- Pilih Bank / E-Wallet --</option>';
-      userInfo.activeBanks.forEach(b => {
-         opts += `<option value="${b.code}">${b.name}</option>`;
-      });
-      select.innerHTML = opts;
-    }
+    populateBankSelect();
   }
 }
 
