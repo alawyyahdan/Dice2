@@ -7,7 +7,6 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const crypto = require('crypto');
 
 function verifyTelegramInitData(initData) {
-  if (process.env.DEBUG === 'true' && initData === 'mock-debug-init-data') return true;
   try {
     const urlParams = new URLSearchParams(initData);
     const hash = urlParams.get('hash');

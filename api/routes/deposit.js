@@ -10,7 +10,6 @@ const requireAdmin = require('../middlewares/authMiddleware');
 
 // Helper verifikasi Telegram miniapp
 function verifyTelegramInitData(initData) {
-  if (process.env.DEBUG === 'true' && initData === 'mock-debug-init-data') return true;
   try {
     const urlParams = new URLSearchParams(initData);
     const hash = urlParams.get('hash');

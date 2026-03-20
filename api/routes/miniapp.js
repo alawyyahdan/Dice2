@@ -7,7 +7,6 @@ const Bet = require('../models/Bet');
 
 // Verifikasi Telegram initData menggunakan HMAC-SHA256
 function verifyTelegramInitData(initData) {
-  if (process.env.DEBUG === 'true' && initData === 'mock-debug-init-data') return true;
 
   try {
     const urlParams = new URLSearchParams(initData);
