@@ -1,5 +1,12 @@
-const { createCanvas } = require('canvas');
+const { createCanvas, registerFont } = require('canvas');
 const Bet = require('../../api/models/Bet');
+const fs = require('fs');
+const path = require('path');
+
+const fontPath = path.join(__dirname, '../assets/Roboto-Bold.ttf');
+if (fs.existsSync(fontPath)) {
+  registerFont(fontPath, { family: 'Roboto' });
+}
 
 async function generateTrendImage(filter) {
   // Fetch last 15 unique rounds for this filter that are resolved
@@ -36,7 +43,7 @@ async function generateTrendImage(filter) {
 
   // Headers
   ctx.fillStyle = '#000000';
-  ctx.font = 'bold 20px Arial';
+  ctx.font = 'bold 20px Roboto, Arial, sans-serif';
   ctx.fillText('No:', 40, padding + 25);
   ctx.fillText('Hasil:', 300, padding + 25);
 
@@ -47,7 +54,7 @@ async function generateTrendImage(filter) {
   for (const round of recentBets) {
     // Round ID
     ctx.fillStyle = '#000000';
-    ctx.font = 'bold 18px Arial';
+    ctx.font = 'bold 18px Roboto, Arial, sans-serif';
     ctx.fillText(round._id, 40, y);
 
     // Dice Circles and Equation
@@ -64,7 +71,7 @@ async function generateTrendImage(filter) {
       ctx.fillStyle = '#ffffff';
       ctx.fill();
       ctx.fillStyle = '#000000';
-      ctx.font = '16px Arial';
+      ctx.font = 'bold 16px Roboto, Arial, sans-serif';
       ctx.fillText(val, currentX + 7, y);
       return currentX + 30;
     };
@@ -89,7 +96,7 @@ async function generateTrendImage(filter) {
     let catX = 480;
     const catBgColor = '#e0e0e0';
 
-    ctx.font = 'bold 16px Arial';
+    ctx.font = 'bold 16px Roboto, Arial, sans-serif';
     // Let's filter some key categories for the trend overview if there are too many
     // Usually we show: [Besar/Kecil], [Ganjil/Genap], [Naga/Harimau/Seri], [Lurus/Pasangan/Tiga Berbeda/Triple]
     const displayCat = [];

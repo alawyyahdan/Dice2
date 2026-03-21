@@ -18,13 +18,23 @@ async function apiFetch(endpoint, options = {}) {
   });
 
   if (res.status === 401) {
-    window.location.href = '/login';
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
     throw new Error('Unauthorized');
   }
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'API Error');
-  return data;
+  const contentType = res.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'API Error');
+    return data;
+  } else {
+    // API merespons HTML/teks (misal 404 dari Nginx atau Express server jika NEXT_PUBLIC_API_URL salah)
+    const text = await res.text();
+    console.error(`API response is NOT JSON (${res.status}): ${text.substring(0, 100)}...`);
+    throw new Error(`Koneksi API Gagal (${res.status}). Pastikan NEXT_PUBLIC_API_URL benar di .env!`);
+  }
 }
 
 export const api = {

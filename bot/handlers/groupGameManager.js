@@ -55,6 +55,9 @@ function registerGroupGameManager(bot) {
 
   // 10-Second Warning Cron (runs at *:50 setiap menit)
   cron.schedule('50 * * * * *', async () => {
+    // If no active groups at all, do nothing to prevent errors.
+    if (activeGroups.size === 0) return;
+
     const config = settingsService.getSettings();
     if (config?.isGroupActive === false) return;
 
@@ -73,6 +76,11 @@ function registerGroupGameManager(bot) {
         );
       } catch (err) {
         console.error(`Gagal mengirim warning ke grup ${groupId}:`, err.message);
+        // Clean up group if bot is kicked
+        if (err.message.includes('Forbidden') || err.message.includes('chat not found')) {
+            console.log(`Menghapus grup ${groupId} dari activeGroups karena Forbidden/Not Found.`);
+            activeGroups.delete(groupId);
+        }
       }
     }
   });
@@ -86,6 +94,8 @@ function registerGroupGameManager(bot) {
     const now = new Date();
     // Only resolve if current minute is a multiple of duration
     if (now.getMinutes() % duration !== 0) return;
+
+    if (activeGroups.size === 0) return;
 
     const roundId = getCurrentRoundId(); // This is the round that just closed
     const nextRoundId = getNextRoundId();

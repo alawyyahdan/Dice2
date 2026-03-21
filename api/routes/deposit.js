@@ -89,7 +89,7 @@ router.post('/create', async (req, res) => {
 
     // Cek limit deposit pending
     const existingPending = await Deposit.countDocuments({ telegramId, status: 'pending' });
-    if (existingPending >= 3) return res.status(400).json({ error: 'Harap selesaikan deposit sebelumnya.' });
+    if (existingPending >= 5) return res.status(400).json({ error: 'Terdapat 5 deposit pending. Harap selesaikan atau batalkan terlebih dahulu sebelum membuat yang baru.' });
 
     const referenceId = `DEP-${Date.now()}-${Math.floor(Math.random()*1000)}`;
 
