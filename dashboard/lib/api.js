@@ -130,4 +130,17 @@ export const api = {
 
   resetDatabase: (data) =>
     apiFetch('/api/admin/system/reset-db', { method: 'POST', body: JSON.stringify(data) }),
+
+  getGroups: () =>
+    apiFetch('/api/admin/groups'),
+
+  toggleGroup: (id) =>
+    apiFetch(`/api/admin/groups/${id}/toggle`, { method: 'PATCH' }),
+
+  deleteGroup: (id) =>
+    apiFetch(`/api/admin/groups/${id}`, { method: 'DELETE' }),
+
+  getGroupStats: (id) =>
+    apiFetch(`/api/admin/groups/${id}/stats`),
+
 };

@@ -12,6 +12,7 @@ const navItems = [
   { href: '/dashboard/deposit', label: '📥 Data Deposit' },
   { href: '/dashboard/withdraw', label: '💸 Withdraw' },
   { href: '/dashboard/angpao', label: '🧧 Histori Angpao' },
+  { href: '/dashboard/groups', label: '🏢 Manajemen Grup' },
   { href: '/dashboard/settings', label: '⚙️ Pengaturan Game' },
 ];
 

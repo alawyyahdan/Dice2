@@ -47,11 +47,23 @@ function getNextRoundId() {
 const rollingGroups = new Set();
 
 function registerGroupGameManager(bot) {
+  const Group = require('../../api/models/Group');
+  
   // Load groups from DB on restart
-  Bet.distinct('groupId', { isGroup: true }).then(groups => {
-    groups.forEach(g => activeGroups.add(g));
-    console.log(`[GroupGameManager] Loaded ${groups.length} active groups dari DB.`);
+  Group.find({ isActive: true }).lean().then(groups => {
+    groups.forEach(g => activeGroups.add(g.chatId));
   }).catch(err => console.error('Gagal meload groups', err));
+
+  // Background Sync: Hapus grup yang dimatikan via Dashboard dari memory bot
+  cron.schedule('*/30 * * * * *', async () => {
+    try {
+      const dbGroups = await Group.find({ isActive: true }).lean();
+      const validGroupIds = new Set(dbGroups.map(g => g.chatId));
+      for (const gid of activeGroups) {
+        if (!validGroupIds.has(gid)) activeGroups.delete(gid);
+      }
+    } catch (e) {}
+  });
 
   // 10-Second Warning Cron (runs at *:50 setiap menit)
   cron.schedule('50 * * * * *', async () => {

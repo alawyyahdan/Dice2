@@ -18,10 +18,8 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 // Connect MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(async () => {
-    console.log('✅ MongoDB connected (bot)');
     const settingsService = require('../api/services/settingsService');
     await settingsService.loadSettings();
-    console.log('⚙️ Dynamic Settings Engine Online (Bot)');
   })
   .catch(err => { console.error('❌ MongoDB error:', err); process.exit(1); });
 
@@ -33,15 +31,27 @@ bot.use(groupMiddleware);
 bot.on('my_chat_member', async (ctx) => {
   if (ctx.chat.type.includes('group')) {
     const status = ctx.update.my_chat_member.new_chat_member.status;
-    const isActive = status === 'member' || status === 'administrator';
+    const Group = require('../api/models/Group');
+    const chatId = ctx.chat.id.toString();
+
     try {
-      const Group = require('../api/models/Group');
-      await Group.findOneAndUpdate(
-        { chatId: ctx.chat.id.toString() },
-        { title: ctx.chat.title, isActive },
-        { upsert: true }
-      );
-    } catch(e) {}
+      if (status === 'member' || status === 'administrator') {
+        // Auto-add but respect existing DB toggle settings using $setOnInsert
+        await Group.findOneAndUpdate(
+          { chatId },
+          { 
+            $set: { title: ctx.chat.title, lastActive: new Date() },
+            $setOnInsert: { isActive: true }
+          },
+          { upsert: true }
+        );
+      } else if (status === 'kicked' || status === 'left' || status === 'restricted') {
+        // Auto-delete so it disappears from Dashboard list
+        await Group.deleteOne({ chatId });
+      }
+    } catch(e) {
+      console.error('Error handling my_chat_member update:', e.message);
+    }
   }
 });
 

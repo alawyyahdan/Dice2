@@ -86,27 +86,22 @@ async function loadGuide() {
 }
 
 async function init() {
-  currentUser = tg.initDataUnsafe?.user;
-
-  // Handle Tab Deep-Linking (Supports ?tab=... and ?tgWebAppStartParam=...)
-  const params = new URLSearchParams(window.location.search);
-  const startParam = params.get('tgWebAppStartParam');
-  const targetTab = params.get('tab') || startParam;
-
-  if (targetTab) {
-    console.log('Deep-linking to tab:', targetTab);
-    setTimeout(() => switchTab(targetTab), 150); // Slightly more delay for stability
-  }
-
-  if (!currentUser) {
-    document.getElementById('loading').innerHTML = `❌ Buka MiniApp dari dalam Telegram Asli!`;
+  const user = tg.initDataUnsafe?.user;
+  
+  if (!user || !user.id) {
+    console.error('MiniApp failed: No user ID found in initDataUnsafe');
+    document.getElementById('loading').innerHTML = `❌ Gagal: Akses MiniApp hanya melalui Telegram resmi!`;
     return;
   }
+  
+  currentUser = user; // Selesaikan assignment currentUser di sini
+  currentInitData = tg.initData;
+
   // Load User Data
   try {
     const res = await fetch(`${API_URL}/api/miniapp/user-info?telegramId=${currentUser.id}&initData=${encodeURIComponent(currentInitData)}&photoUrl=${encodeURIComponent(currentUser.photo_url || '')}`);
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Error');
+    if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan sistem');
 
     // Assign data to userInfo
     userInfo = data;
@@ -121,6 +116,15 @@ async function init() {
     await loadPaymentMethods();
 
     renderUI();
+
+    // Handle Tab Deep-Linking (Supports ?tab=... and ?tgWebAppStartParam=...)
+    const params = new URLSearchParams(window.location.search);
+    const startParam = params.get('tgWebAppStartParam');
+    const targetTab = params.get('tab') || startParam;
+
+    if (targetTab) {
+      setTimeout(() => switchTab(targetTab), 250); // Delay biar UI data siap dulu
+    }
   } catch (err) {
     document.getElementById('loading').innerHTML = `❌ Gagal memuat data: ${err.message}`;
   }
@@ -532,7 +536,7 @@ async function sendManualToTele() {
 }
 
 async function checkPaymentStatusSilent() {
-  if (!currentCharge) return;
+  if (!currentUser || !currentCharge) return;
   try {
     const res = await fetch(`${API_URL}/api/deposit/history?telegramId=${currentUser.id}&initData=${encodeURIComponent(currentInitData)}`);
     const data = await res.json();
@@ -570,6 +574,7 @@ function onPaymentSuccess(amountAsli) {
 }
 
 async function loadHistory() {
+  if (!currentUser) return;
   const container = document.getElementById('bets-container');
   container.innerHTML = '<div class="loading">Memuat riwayat dadu...</div>';
   try {
@@ -642,6 +647,7 @@ let depHistTotal = 0;
 const DEP_PER_PAGE = 5;
 
 async function loadDepoHistory() {
+  if (!currentUser) return;
   const container = document.getElementById('deposits-container');
   if (!container) return;
   container.innerHTML = '<div class="loading">Memuat...</div>';
@@ -696,6 +702,7 @@ let wdHistTotal = 0;
 const WD_PER_PAGE = 5;
 
 async function loadWdHistory() {
+  if (!currentUser) return;
   const container = document.getElementById('wd-history-container');
   if (!container) return;
   container.innerHTML = '<div class="loading">Memuat...</div>';
@@ -839,6 +846,7 @@ async function autoCancelDeposit(refId, silent = false) {
 
 // ===== LEADERBOARD LOGIC =====
 async function loadLeaderboard(filter) {
+  if (!currentUser) return;
   document.querySelectorAll('[id^="btn-ldb-"]').forEach(btn => btn.classList.remove('active'));
   document.getElementById(`btn-ldb-` + filter).classList.add('active');
 

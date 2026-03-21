@@ -15,7 +15,6 @@ class SettingsService {
       }
       this.cache = config.toObject({ defaults: true });
       this.lastUpdated = Date.now();
-      console.log('[SettingsService] Settings loaded/refreshed from DB.');
       return this.cache;
     } catch (err) {
       console.error('[SettingsService] Error loading settings:', err);

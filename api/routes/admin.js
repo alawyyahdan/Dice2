@@ -3,6 +3,10 @@ const router = express.Router();
 const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
 const Setting = require('../models/Setting');
+const Group = require('../models/Group');
+const Bet = require('../models/Bet');
+const User = require('../models/User');
+const axios = require('axios');
 const requireAdmin = require('../middlewares/authMiddleware');
 
 // Validasi Admin (hanya bisa diakses jika sudah login)
@@ -198,6 +202,123 @@ router.post('/system/reset-db', async (req, res) => {
     }
 
     res.json({ success: true, message: `Berhasil mereset data: ${cleared.join(', ')}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- GROUP MANAGEMENT ALGORITHMS ---
+
+// GET /api/admin/groups
+router.get('/groups', async (req, res) => {
+  try {
+    const groups = await Group.find().sort({ addedAt: -1 }).lean();
+    
+    // Get total volumes
+    const volumeStats = await Bet.aggregate([
+      { $match: { isGroup: true } },
+      { $group: { _id: "$groupId", volume: { $sum: "$betAmount" } } }
+    ]);
+    const volumeMap = {};
+    volumeStats.forEach(v => { volumeMap[v._id] = v.volume; });
+
+    // Fetch members concurrently via TG API
+    const promises = groups.map(async (g) => {
+      let memberCount = 0;
+      try {
+        if (process.env.BOT_TOKEN) {
+          const tRes = await axios.get(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/getChatMemberCount?chat_id=${g.chatId}`);
+          if (tRes.data && tRes.data.ok) memberCount = tRes.data.result;
+        }
+      } catch (e) {
+        // Ignored if bot was kicked
+      }
+      return {
+        _id: g._id,
+        chatId: g.chatId,
+        title: g.title,
+        isActive: g.isActive,
+        addedAt: g.addedAt,
+        totalVolume: volumeMap[g.chatId] || 0,
+        memberCount
+      };
+    });
+
+    const result = await Promise.all(promises);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/admin/groups/:id/toggle
+router.patch('/groups/:id/toggle', async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.id);
+    if (!group) return res.status(404).json({ error: 'Group not found' });
+    group.isActive = !group.isActive;
+    await group.save();
+    res.json({ success: true, isActive: group.isActive });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/admin/groups/:id
+router.delete('/groups/:id', async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.id);
+    if (!group) return res.status(404).json({ error: 'Group not found' });
+    await Group.deleteOne({ _id: group._id });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/groups/:id/stats
+router.get('/groups/:id/stats', async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.id);
+    if (!group) return res.status(404).json({ error: 'Group not found' });
+
+    const chatId = group.chatId;
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const matchGroup = { isGroup: true, groupId: chatId };
+
+    const [daily, weekly, monthly, top10] = await Promise.all([
+      Bet.aggregate([{ $match: { ...matchGroup, createdAt: { $gte: today } } }, { $group: { _id: null, total: { $sum: "$betAmount" } } }]),
+      Bet.aggregate([{ $match: { ...matchGroup, createdAt: { $gte: weekAgo } } }, { $group: { _id: null, total: { $sum: "$betAmount" } } }]),
+      Bet.aggregate([{ $match: { ...matchGroup, createdAt: { $gte: monthAgo } } }, { $group: { _id: null, total: { $sum: "$betAmount" } } }]),
+      Bet.aggregate([
+        { $match: matchGroup },
+        { $group: { _id: "$telegramId", volume: { $sum: "$betAmount" } } },
+        { $sort: { volume: -1 } },
+        { $limit: 10 }
+      ])
+    ]);
+
+    const enrichedTop10 = [];
+    for (let t of top10) {
+      const u = await User.findOne({ telegramId: t._id }).lean();
+      enrichedTop10.push({
+        telegramId: t._id,
+        username: u ? (u.username || u.firstName) : 'Unknown',
+        volume: t.volume
+      });
+    }
+
+    res.json({
+      daily: daily[0]?.total || 0,
+      weekly: weekly[0]?.total || 0,
+      monthly: monthly[0]?.total || 0,
+      top10: enrichedTop10
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -5,10 +5,13 @@ const path = require('path');
 
 // Use absolute path resolve to guarantee font is found regardless of cwd
 const fontPath = path.resolve(__dirname, '..', 'assets', 'Roboto-Bold.ttf');
-if (fs.existsSync(fontPath)) {
-  registerFont(fontPath, { family: 'Roboto' });
-  console.log('[TrendGenerator] Font Roboto loaded from:', fontPath);
-} else {
+try {
+  if (fs.existsSync(fontPath)) {
+    registerFont(fontPath, { family: 'Roboto', weight: 'bold' });
+  } else {
+    throw new Error('Font file not found');
+  }
+} catch (err) {
   console.warn('[TrendGenerator] Font not found at:', fontPath, '- text may render as boxes!');
 }
 
