@@ -3,29 +3,23 @@ module.exports = {
     {
       name: 'dice-api',
       script: 'server.js',
-      cwd: '/root/Dice2/api',
+      cwd: './api', // Pakai ./ biar otomatis ngikut folder project
       watch: false,
-      env: {
-        NODE_ENV: 'production',
-      },
+      env: { NODE_ENV: 'production' }
     },
     {
       name: 'dice-bot',
       script: 'index.js',
-      cwd: '/root/Dice2/bot',
+      cwd: './bot',
       watch: false,
-      env: {
-        NODE_ENV: 'production',
-      },
+      env: { NODE_ENV: 'production' }
     },
     {
       name: 'dice-dashboard',
       script: 'server.js',
-      cwd: '/root/Dice2/dashboard',
+      cwd: './dashboard',
       watch: false,
-      env: {
-        NODE_ENV: 'production',
-      },
-    },
-  ],
+      env: { NODE_ENV: 'production' }
+    }
+  ]
 };

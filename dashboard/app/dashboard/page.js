@@ -69,7 +69,7 @@ export default function DashboardPage() {
           <div className="h-64 flex items-end justify-between gap-4 border-b-2 border-slate-700 pb-2">
             {chartData.map((val, i) => (
               <div key={i} className="h-full flex flex-col justify-end items-center gap-2 flex-1 group">
-                <div 
+                <div
                   className="w-full bg-blue-500/20 group-hover:bg-blue-500 border-t border-blue-500/50 group-hover:border-transparent transition-all rounded-t-lg relative"
                   style={{ height: `${maxVol === 0 ? 0 : Math.max((val / maxVol) * 100, 1)}%` }}
                 >
@@ -92,7 +92,7 @@ export default function DashboardPage() {
               { href: '/dashboard/withdraw', label: '💸 Kelola Withdraw', color: 'bg-slate-700 text-slate-200 hover:bg-slate-600 border-slate-600' },
               { href: '/dashboard/users', label: '👥 Data Users', color: 'bg-slate-700 text-slate-200 hover:bg-slate-600 border-slate-600' },
               { href: '/dashboard/bets', label: '🎲 History Taruhan', color: 'bg-slate-700 text-slate-200 hover:bg-slate-600 border-slate-600' },
-              { href: '/dashboard/balance', label: '💰 Adjust Saldo', color: 'bg-slate-700 text-slate-200 hover:bg-slate-600 border-slate-600' },
+              { href: '/dashboard/groups', label: '🏢 Manage Groups', color: 'bg-slate-700 text-slate-200 hover:bg-slate-600 border-slate-600' },
             ].map((item) => (
               <a
                 key={item.href}

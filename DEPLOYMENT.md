@@ -71,20 +71,8 @@ PM2 akan memastikan aplikasi tetap jalan walau VPS di-restart atau kita tutup te
 
 ```bash
 # 1. Jalankan API Server
-cd api
-pm2 start server.js --name "dice-api"
-cd ..
+cd /root/Dice2/dashboard && npm run build && cd /root/Dice2 && pm2 start ecosystem.config.js
 
-# 2. Jalankan Telegram Bot
-cd bot
-pm2 start index.js --name "dice-bot"
-cd ..
-
-# 3. Jalankan Dashboard (Next.js custom server)
-cd dashboard
-export NODE_ENV=production
-pm2 start server.js --name "dice-dashboard"
-cd ..
 ```
 
 ### Menyimpan konfigurasi PM2 agar auto-start saat VPS Reboot:

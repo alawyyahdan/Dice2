@@ -69,28 +69,32 @@ export default function UsersPage() {
     { key: 'turnover', label: 'Total Bet', render: (v) => `${(v || 0).toLocaleString()} pt` },
     { key: 'totalDeposit', label: 'Depo', render: (v) => `${(v || 0).toLocaleString()}` },
     { key: 'isBanned', label: 'Status', render: (v) => v ? <span className="text-rose-400 font-bold">Banned</span> : <span className="text-emerald-400">Active</span> },
-    { key: 'turnoverRequired', label: 'Sisa TO', render: (_, row) => {
-      const sisa = Math.max(0, row.turnoverRequired || 0);
-      return sisa === 0 ? <span className="text-emerald-400 font-bold">LUNAS</span> : <span className="text-amber-400 font-bold">{sisa.toLocaleString()} pt</span>;
-    }},
-    { key: 'createdAt', label: 'Tanggal Join', render: (v) => v ? new Date(v).toLocaleString('id-ID', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-' },
-    { key: 'lastActive', label: 'Terakhir Aktif', render: (v) => v ? new Date(v).toLocaleString('id-ID', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-' },
-    { key: '_id', label: 'Aksi', render: (_, row) => (
-      <div className="flex gap-1.5 items-center flex-wrap">
-        <button onClick={() => setBankModal(row)} className="text-emerald-400 hover:text-emerald-300 text-xs font-bold bg-emerald-500/10 px-2 py-1 border border-emerald-500/20 rounded shadow-sm">
-          Bank
-        </button>
-        <button onClick={() => setAdjustModal(row)} className="text-blue-400 hover:text-blue-300 text-xs font-bold bg-blue-500/10 px-2 py-1 border border-blue-500/20 rounded shadow-sm">
-          Saldo
-        </button>
-        <button onClick={() => handleBan(row)} className="text-amber-400 hover:text-amber-300 text-xs font-bold bg-amber-500/10 px-2 py-1 border border-amber-500/20 rounded shadow-sm">
-          {row.isBanned ? 'Unban' : 'Ban'}
-        </button>
-        <button onClick={() => handleDelete(row)} className="text-rose-400 hover:text-rose-300 text-xs font-bold bg-rose-500/10 px-2 py-1 border border-rose-500/20 rounded shadow-sm">
-          Hapus
-        </button>
-      </div>
-    )},
+    {
+      key: 'turnoverRequired', label: 'Sisa TO', render: (_, row) => {
+        const sisa = Math.max(0, row.turnoverRequired || 0);
+        return sisa === 0 ? <span className="text-emerald-400 font-bold">LUNAS</span> : <span className="text-amber-400 font-bold">{sisa.toLocaleString()} pt</span>;
+      }
+    },
+    { key: 'createdAt', label: 'Tanggal Join', render: (v) => v ? new Date(v).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-' },
+    { key: 'lastActive', label: 'Terakhir Aktif', render: (v) => v ? new Date(v).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-' },
+    {
+      key: '_id', label: 'Aksi', render: (_, row) => (
+        <div className="flex gap-1.5 items-center flex-wrap">
+          <button onClick={() => setBankModal(row)} className="text-emerald-400 hover:text-emerald-300 text-xs font-bold bg-emerald-500/10 px-2 py-1 border border-emerald-500/20 rounded shadow-sm">
+            Bank
+          </button>
+          <button onClick={() => setAdjustModal(row)} className="text-blue-400 hover:text-blue-300 text-xs font-bold bg-blue-500/10 px-2 py-1 border border-blue-500/20 rounded shadow-sm">
+            Saldo
+          </button>
+          <button onClick={() => handleBan(row)} className="text-amber-400 hover:text-amber-300 text-xs font-bold bg-amber-500/10 px-2 py-1 border border-amber-500/20 rounded shadow-sm">
+            {row.isBanned ? 'Unban' : 'Ban'}
+          </button>
+          <button onClick={() => handleDelete(row)} className="text-rose-400 hover:text-rose-300 text-xs font-bold bg-rose-500/10 px-2 py-1 border border-rose-500/20 rounded shadow-sm">
+            Hapus
+          </button>
+        </div>
+      )
+    },
   ];
 
   return (
@@ -133,7 +137,7 @@ export default function UsersPage() {
               placeholder="Keterangan Admin (opsional)"
               className="w-full bg-slate-900 border-2 border-slate-700 rounded-xl px-5 py-4 text-base font-bold mb-4 text-white placeholder-slate-500 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none transition-all"
             />
-            <div className="flex items-start gap-4 mb-8 bg-slate-800/40 p-5 border border-slate-700/60 rounded-xl cursor-pointer" onClick={() => setAdjustForm({...adjustForm, includeTurnover: !adjustForm.includeTurnover})}>
+            <div className="flex items-start gap-4 mb-8 bg-slate-800/40 p-5 border border-slate-700/60 rounded-xl cursor-pointer" onClick={() => setAdjustForm({ ...adjustForm, includeTurnover: !adjustForm.includeTurnover })}>
               <input
                 type="checkbox"
                 id="includeTo"
@@ -163,7 +167,7 @@ export default function UsersPage() {
           <div className="card-dark p-8 w-full max-w-lg relative max-h-[90vh] overflow-y-auto">
             <h2 className="font-black text-2xl text-white mb-2">💳 Manajemen Rekening Bank</h2>
             <p className="text-base font-medium text-slate-400 mb-6">User: <span className="text-white">{bankModal.firstName}</span></p>
-            
+
             <div className="flex flex-col gap-4 mb-8">
               {(!bankModal.banks || bankModal.banks.length === 0) ? (
                 <div className="text-slate-500 text-center py-4 bg-slate-900/50 rounded-xl border border-slate-700/50">Belum ada rekening yang ditautkan.</div>
@@ -172,7 +176,7 @@ export default function UsersPage() {
                   <div key={i} className="flex justify-between items-center bg-slate-800 border border-slate-700 p-4 rounded-xl">
                     <div>
                       <div className="text-white font-bold">{b.bankName}</div>
-                      <div className="text-slate-400 text-sm">{b.accountNumber} <br/>a/n {b.accountName}</div>
+                      <div className="text-slate-400 text-sm">{b.accountNumber} <br />a/n {b.accountName}</div>
                     </div>
                     <button onClick={() => handleDeleteBank(bankModal.telegramId, b.accountNumber)} className="bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white px-4 py-2 rounded-lg font-bold text-sm transition-colors border border-rose-500/30 cursor-pointer">
                       Hapus
