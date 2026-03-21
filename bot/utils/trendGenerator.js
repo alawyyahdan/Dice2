@@ -3,9 +3,13 @@ const Bet = require('../../api/models/Bet');
 const fs = require('fs');
 const path = require('path');
 
-const fontPath = path.join(__dirname, '../assets/Roboto-Bold.ttf');
+// Use absolute path resolve to guarantee font is found regardless of cwd
+const fontPath = path.resolve(__dirname, '..', 'assets', 'Roboto-Bold.ttf');
 if (fs.existsSync(fontPath)) {
   registerFont(fontPath, { family: 'Roboto' });
+  console.log('[TrendGenerator] Font Roboto loaded from:', fontPath);
+} else {
+  console.warn('[TrendGenerator] Font not found at:', fontPath, '- text may render as boxes!');
 }
 
 async function generateTrendImage(filter) {
