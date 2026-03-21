@@ -17,7 +17,7 @@ let selectedBankIndex = -1;
 function switchTab(tabId) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  
+
   // Find the button that triggers this tab and make it active
   const triggerBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') === `switchTab('${tabId}')`);
   if (triggerBtn) triggerBtn.classList.add('active');
@@ -61,7 +61,7 @@ async function loadGuide() {
         <th style="padding: 10px 12px;">Hadiah</th>
         <th style="padding: 10px 12px; white-space:nowrap;">Max Bet</th>
       </tr>`;
-    
+
     list.forEach(item => {
       html += `<tr style="border-bottom: 1px solid var(--border); color: var(--text-muted);">
         <td style="padding: 10px 12px; font-weight:bold; color:var(--primary); white-space:nowrap;">${item.code}</td>
@@ -76,16 +76,16 @@ async function loadGuide() {
       <h4 style="color:var(--danger); margin-bottom:4px; font-size:0.9rem;">🚨 PENTING: ATURAN TRIPLE OVERRIDE</h4>
       <p style="font-size:0.85rem; color:#f87171; line-height:1.4;">Jika hasil ketiga dadu adalah KEMBAR (contoh: 2-2-2), maka SELURUH taruhan standar (Besar/Kecil/Ganjil/Genap/Dst) akan otomatis dinyatakan <b>KALAH</b>, kecuali kamu menebak taruhan spesifik "T" atau "TS".</p>
     </div>`;
-    
+
     container.innerHTML = html;
-  } catch(err) {
+  } catch (err) {
     container.innerHTML = `<span style="color:var(--danger)">Gagal memuat: ${err.message}</span>`;
   }
 }
 
 async function init() {
   currentUser = tg.initDataUnsafe?.user;
-  
+
   // Debug Simulation
   const params = new URLSearchParams(window.location.search);
   const debugId = params.get('debugId');
@@ -117,10 +117,10 @@ function renderUI() {
   document.getElementById('balance-amount').textContent = `${userInfo.balance} pt`;
   document.getElementById('depo-balance-amount').textContent = `${userInfo.balance} pt`;
   const remainingTO = userInfo.turnoverRemaining || 0;
-  
+
   // Set text sisa turnover
-  document.getElementById('turnover-text').innerHTML = remainingTO > 0 
-    ? `🎯 Sisa Turnover: <strong>${remainingTO} pt</strong>` 
+  document.getElementById('turnover-text').innerHTML = remainingTO > 0
+    ? `🎯 Sisa Turnover: <strong>${remainingTO} pt</strong>`
     : `🎯 Sisa Turnover: <strong class="text-success">LUNAS (Bisa WD)</strong>`;
 
   // Hide the bar since we use text only now
@@ -202,10 +202,10 @@ async function addBankAccount() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Gagal menyimpan');
-    
+
     userInfo.banks = data.banks;
     selectedBankIndex = userInfo.banks.length - 1;
-    
+
     document.getElementById('add-bank-form').style.display = 'none';
     document.getElementById('wd-form-area').style.display = 'block';
     renderBanks();
@@ -220,7 +220,7 @@ async function addBankAccount() {
 async function submitWithdraw() {
   const amount = parseInt(document.getElementById('wd-amount').value);
   if (selectedBankIndex < 0) return alert('Pilih rekening tujuan!');
-  
+
   if (!amount || amount < 20) return showError('wd-amount-err', 'Min: 20 poin');
   if (amount > userInfo.balance) return showError('wd-amount-err', 'Saldo tidak cukup!');
 
@@ -272,7 +272,7 @@ async function submitDeposit() {
     if (data.data.checkoutUrl) {
       tg.openLink(data.data.checkoutUrl);
     }
-    
+
     showSuccessScreen('Tagihan Dibuat!', 'Silakan selesaikan pembayaran di halaman Web Browser yang terbuka.');
   } catch (err) {
     alert(`❌ ${err.message}`);
@@ -296,7 +296,7 @@ async function loadHistory() {
       const isWin = bet.isWin;
       const profitStr = isWin ? `+${bet.profit}` : `-${bet.betAmount}`;
       const colorCls = isWin ? 'text-win' : 'text-lose';
-      const timeStr = new Date(bet.createdAt).toLocaleString('id-ID', { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'short' });
+      const timeStr = new Date(bet.createdAt).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' });
       return `
         <div class="bet-card">
           <div class="bet-info">
@@ -326,8 +326,8 @@ async function loadDepoHistory() {
     container.innerHTML = data.deposits.map(dep => {
       let statusColor = dep.status === 'success' ? 'var(--success)' : dep.status === 'failed' ? 'var(--danger)' : 'var(--warning)';
       let statusText = dep.status.toUpperCase();
-      const timeStr = new Date(dep.createdAt).toLocaleString('id-ID', { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'short' });
-      
+      const timeStr = new Date(dep.createdAt).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' });
+
       return `
         <div class="bet-card">
           <div class="bet-info">

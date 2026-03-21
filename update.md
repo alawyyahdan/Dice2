@@ -7,3 +7,5 @@ Fix atau buatkan yang saya mau
 3.sama result kok malah lotak" di gamabr? cek dan betulin (LIHAT GAMABR YG SAYA KIRIM)
 
 4. buatkan logic kalau user udh melakukan deposit 5 kali dan pending semua gabisa buat deposti lagi harus selesaikan salah satu atau tunggu batal semua
+
+sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev

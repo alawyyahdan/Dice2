@@ -40,7 +40,8 @@
       <button class="tab-btn" onclick="switchTab('deposit')">➕ Depo</button>
       <button class="tab-btn" onclick="switchTab('history')">🎲 Riwayat</button>
       <button class="tab-btn" onclick="switchTab('guide')">📖 Aturan</button>
-      <button id="nav-leaderboard" class="tab-btn" onclick="switchTab('leaderboard')" style="display:none;">🏆 Klasemen</button>
+      <button id="nav-leaderboard" class="tab-btn" onclick="switchTab('leaderboard')" style="display:none;">🏆
+        Leaderboard</button>
     </div>
 
     <!-- TAB: WITHDRAW -->
@@ -63,15 +64,19 @@
         <div class="card-dark">
           <h3 style="margin-bottom: 16px;">💳 Pilih Rekening Tujuan</h3>
           <div id="bank-list"></div>
-          <button class="btn btn-primary" style="margin-top: 12px; padding: 12px; font-size: 1rem; background: var(--border);" onclick="toggleAddBankForm()" id="btn-show-add-bank">+ Tambah Rekening Baru</button>
+          <button class="btn btn-primary"
+            style="margin-top: 12px; padding: 12px; font-size: 1rem; background: var(--border);"
+            onclick="toggleAddBankForm()" id="btn-show-add-bank">+ Tambah Rekening Baru</button>
           <div id="add-bank-form">
             <div class="form-group">
               <label>Nama Bank</label>
-              <select id="new-bank-name" style="width: 100%; padding: 12px; font-size: 1rem; background: var(--border); border: none; border-radius: 8px; color: #fff;"></select>
+              <select id="new-bank-name"
+                style="width: 100%; padding: 12px; font-size: 1rem; background: var(--border); border: none; border-radius: 8px; color: #fff;"></select>
             </div>
             <div class="form-group">
               <label>Nomor Rekening</label>
-              <input type="tel" id="new-bank-acc" placeholder="12345678" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+              <input type="tel" id="new-bank-acc" placeholder="12345678"
+                oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
             </div>
             <div class="form-group">
               <label>Atas Nama (A/N)</label>
@@ -86,7 +91,8 @@
           <h3 style="margin-bottom: 16px;">💸 Form Penarikan</h3>
           <div class="form-group">
             <label>Jumlah Withdraw Poin <span style="opacity:0.7;font-size:0.8rem;">(1pt = Rp1.000)</span></label>
-            <input type="tel" id="wd-amount" placeholder="Minimal: 20 pt" min="20" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+            <input type="tel" id="wd-amount" placeholder="Minimal: 20 pt" min="20"
+              oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
             <div class="error-msg" id="wd-amount-err"></div>
           </div>
           <button class="btn btn-primary" onclick="submitWithdraw()" id="btn-submit-wd">AJUKAN PENARIKAN</button>
@@ -98,9 +104,12 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <h3 style="margin:0; font-size:0.95rem;">🧾 Riwayat Withdraw</h3>
           <div style="display:flex; gap:6px;">
-            <button id="wd-hist-prev" onclick="wdHistPrev()" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:4px 10px; font-size:0.8rem; cursor:pointer;">←</button>
-            <span id="wd-hist-page" style="color:var(--text-muted); font-size:0.8rem; align-self:center; padding:0 4px;">1/1</span>
-            <button id="wd-hist-next" onclick="wdHistNext()" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:4px 10px; font-size:0.8rem; cursor:pointer;">→</button>
+            <button id="wd-hist-prev" onclick="wdHistPrev()"
+              style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:4px 10px; font-size:0.8rem; cursor:pointer;">←</button>
+            <span id="wd-hist-page"
+              style="color:var(--text-muted); font-size:0.8rem; align-self:center; padding:0 4px;">1/1</span>
+            <button id="wd-hist-next" onclick="wdHistNext()"
+              style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:4px 10px; font-size:0.8rem; cursor:pointer;">→</button>
           </div>
         </div>
         <div id="wd-history-container" style="display:flex; flex-direction:column; gap:8px;">
@@ -122,39 +131,48 @@
         <h3 id="depo-title" style="margin-bottom: 16px; color: var(--success);">➕ Form Deposit</h3>
 
         <!-- PENGATURAN MANUAL BANK -->
-        <div id="manual-bank-info" style="display:none; margin-bottom: 16px; text-align: center; background: rgba(0,0,0,0.2); padding: 16px; border-radius: 12px; border: 1px dashed var(--border);">
-            <img id="manual-logo" src="" alt="Bank Logo" style="max-height: 48px; margin-bottom: 12px; display: none; margin-left: auto; margin-right: auto;">
-            <div style="font-size: 1.1rem; color: var(--primary); font-weight: bold;" id="manual-bank-name"></div>
-            <div style="font-size: 1.8rem; color: #fff; font-family: monospace; margin: 8px 0; font-weight: 900;" id="manual-acc-no"></div>
-            <div style="font-size: 1rem; color: var(--text);" id="manual-acc-name"></div>
+        <div id="manual-bank-info"
+          style="display:none; margin-bottom: 16px; text-align: center; background: rgba(0,0,0,0.2); padding: 16px; border-radius: 12px; border: 1px dashed var(--border);">
+          <img id="manual-logo" src="" alt="Bank Logo"
+            style="max-height: 48px; margin-bottom: 12px; display: none; margin-left: auto; margin-right: auto;">
+          <div style="font-size: 1.1rem; color: var(--primary); font-weight: bold;" id="manual-bank-name"></div>
+          <div style="font-size: 1.8rem; color: #fff; font-family: monospace; margin: 8px 0; font-weight: 900;"
+            id="manual-acc-no"></div>
+          <div style="font-size: 1rem; color: var(--text);" id="manual-acc-name"></div>
         </div>
 
         <!-- DEPO DISABLED MSG -->
-        <div id="depo-disabled-msg" style="display: none; text-align: center; padding: 30px; color: var(--danger); font-weight: bold; background: rgba(239, 68, 68, 0.1); border-radius: 12px;">
-           <span style="font-size: 3rem; display: block; margin-bottom: 10px;">⛔</span>
-           Layanan deposit sedang ditutup.
+        <div id="depo-disabled-msg"
+          style="display: none; text-align: center; padding: 30px; color: var(--danger); font-weight: bold; background: rgba(239, 68, 68, 0.1); border-radius: 12px;">
+          <span style="font-size: 3rem; display: block; margin-bottom: 10px;">⛔</span>
+          Layanan deposit sedang ditutup.
         </div>
 
         <div id="depo-form-area" style="display: none;">
           <div class="form-group">
             <label>Jumlah Deposit Poin <span style="opacity:0.7;font-size:0.8rem;">(1pt = Rp1.000)</span></label>
-            <input type="tel" id="depo-amount" placeholder="Contoh: 50" min="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+            <input type="tel" id="depo-amount" placeholder="Contoh: 50" min="10"
+              oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
             <div class="error-msg" id="depo-amount-err"></div>
           </div>
 
           <div class="form-group" id="group-depo-method">
             <label>Pilih Metode Pembayaran</label>
-            <div id="method-options-container" style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
-               <div style="color:var(--text-muted); padding: 10px;">Sedang memuat sistem pembayaran...</div>
+            <div id="method-options-container"
+              style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
+              <div style="color:var(--text-muted); padding: 10px;">Sedang memuat sistem pembayaran...</div>
             </div>
             <input type="hidden" id="depo-method" value="">
             <div class="error-msg" id="depo-method-err"></div>
           </div>
 
-          <button class="btn btn-success" onclick="submitDeposit()" id="btn-submit-depo" style="margin-top: 20px;">LANJUTKAN DEPOSIT</button>
+          <button class="btn btn-success" onclick="submitDeposit()" id="btn-submit-depo"
+            style="margin-top: 20px;">LANJUTKAN DEPOSIT</button>
         </div>
 
-        <div id="depo-warning-text" style="margin-top: 16px; font-size: 0.85rem; color: var(--warning); text-align: center; line-height: 1.4; font-weight: 600;"></div>
+        <div id="depo-warning-text"
+          style="margin-top: 16px; font-size: 0.85rem; color: var(--warning); text-align: center; line-height: 1.4; font-weight: 600;">
+        </div>
       </div>
 
       <!-- INLINE: RIWAYAT DEPOSIT -->
@@ -162,9 +180,12 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <h3 style="margin:0; font-size:0.95rem;">🧾 Riwayat Deposit</h3>
           <div style="display:flex; gap:6px;">
-            <button id="dep-hist-prev" onclick="depHistPrev()" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:4px 10px; font-size:0.8rem; cursor:pointer;">←</button>
-            <span id="dep-hist-page" style="color:var(--text-muted); font-size:0.8rem; align-self:center; padding:0 4px;">1/1</span>
-            <button id="dep-hist-next" onclick="depHistNext()" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:4px 10px; font-size:0.8rem; cursor:pointer;">→</button>
+            <button id="dep-hist-prev" onclick="depHistPrev()"
+              style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:4px 10px; font-size:0.8rem; cursor:pointer;">←</button>
+            <span id="dep-hist-page"
+              style="color:var(--text-muted); font-size:0.8rem; align-self:center; padding:0 4px;">1/1</span>
+            <button id="dep-hist-next" onclick="depHistNext()"
+              style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:4px 10px; font-size:0.8rem; cursor:pointer;">→</button>
           </div>
         </div>
         <div id="deposits-container" style="display:flex; flex-direction:column; gap:8px;">
@@ -176,23 +197,42 @@
 
     <!-- TAB: HISTORY DADU -->
     <div id="tab-history" class="tab-content">
+      <div id="today-stats" style="display:none; margin-bottom:12px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:14px; padding:14px 16px;">
+        <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; letter-spacing:0.05em; margin-bottom:10px;">📊 STATISTIK HARI INI</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; text-align:center;">
+          <div>
+            <div id="stat-total-bets" style="font-size:1.4rem; font-weight:900; color:#fff;">0</div>
+            <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">Total Bet</div>
+          </div>
+          <div>
+            <div id="stat-total-wagered" style="font-size:1.4rem; font-weight:900; color:var(--primary);">0</div>
+            <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">Dipasang (pt)</div>
+          </div>
+          <div>
+            <div id="stat-net-pl" style="font-size:1.4rem; font-weight:900;">0</div>
+            <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">Untung/Rugi</div>
+          </div>
+        </div>
+      </div>
       <div class="card-dark" id="bets-container"></div>
     </div>
 
     <!-- TAB: LEADERBOARD -->
     <div id="tab-leaderboard" class="tab-content">
-      <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 15px; border-bottom: 1px solid var(--border); margin-bottom: 15px; scrollbar-width: none;">
+      <div
+        style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 15px; border-bottom: 1px solid var(--border); margin-bottom: 15px; scrollbar-width: none;">
         <button id="btn-ldb-daily" class="filter-btn active" onclick="loadLeaderboard('daily')">Harian</button>
         <button id="btn-ldb-weekly" class="filter-btn" onclick="loadLeaderboard('weekly')">Mingguan</button>
         <button id="btn-ldb-monthly" class="filter-btn" onclick="loadLeaderboard('monthly')">Bulanan</button>
       </div>
 
-      <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-bottom: 15px; font-weight: 500;">
-        * Peringkat klasemen berdasarkan total taruhan yang dilakukan oleh user.
+      <div
+        style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-bottom: 15px; font-weight: 500;">
+        * Dilakukan reset peringkat harian, mingguan dan bulanan
       </div>
-      
+
       <div id="leaderboard-container" style="display: flex; flex-direction: column; gap: 10px;">
-         <div class="loading">Memuat klasemen...</div>
+        <div class="loading">Memuat leaderboard...</div>
       </div>
     </div>
 
@@ -201,56 +241,87 @@
     <div id="tab-guide" class="tab-content">
       <div class="card-dark guide-content">
         <h2 style="font-size: 1.6rem; color: #fff; margin-bottom: 8px;">🎲 Panduan Lengkap Bermain</h2>
-        <p>Selamat datang di Sic Bo! Game dadu fair-play terseru di mana kamu bisa melawan Bot 1v1 atau bermain massal di Grup.</p>
-        
-        <div style="background:var(--card); padding:16px; border-radius:12px; border-left:4px solid var(--primary); margin:16px 0;">
+        <p>Selamat datang di Sic Bo! Game dadu fair-play terseru di mana kamu bisa melawan Bot 1v1 atau bermain massal
+          di Grup.</p>
+
+        <div
+          style="background:var(--card); padding:16px; border-radius:12px; border-left:4px solid var(--primary); margin:16px 0;">
           <h3 style="color:var(--primary); font-size:1.1rem; margin-bottom:8px;">📌 Cara Kirim Taruhan (Dari Bot)</h3>
-          <p style="font-size:0.9rem; margin-bottom:8px;">Ketik di chat bot kode taruhan beserta nominal poinnya tanpa spasi.</p>
+          <p style="font-size:0.9rem; margin-bottom:8px;">Ketik di chat bot kode taruhan beserta nominal poinnya tanpa
+            spasi.</p>
           <ul style="font-size:0.9rem; padding-left:20px; color:#fff;">
-            <li><code style="background:#000; padding:2px 6px; border-radius:4px; color:var(--primary);">B100</code> → Bertaruh Besar 100 pt</li>
-            <li><code style="background:#000; padding:2px 6px; border-radius:4px; color:var(--primary);">K50</code> → Bertaruh Kecil 50 pt</li>
-            <li><code style="background:#000; padding:2px 6px; border-radius:4px; color:var(--primary);">GA200</code> → Bertaruh Ganjil 200 pt</li>
-            <li><code style="background:#000; padding:2px 6px; border-radius:4px; color:var(--primary);">14J100</code> → Menebak spesifik total dadu berjumlah 14 seharga 100 pt <span style="color:#888; font-size:0.8rem;">(Range J: angka 4 sampai 17)</span></li>
-            <li><code style="background:#000; padding:2px 6px; border-radius:4px; color:var(--primary);">5TS100</code> → Menebak terjadi Triple dengan angka 5 (5-5-5) seharga 100 pt <span style="color:#888; font-size:0.8rem;">(Range TS: Dadu 1 sampai 6)</span></li>
-            <li><code style="background:#000; padding:2px 6px; border-radius:4px; color:var(--primary);">4DS100</code> → Menebak dadu spesifik keluar angka 4 minimal satu buah seharga 100 pt <span style="color:#888; font-size:0.8rem;">(Range DS: Dadu 1 sampai 6)</span></li>
+            <li><code style="background:#000; padding:2px 6px; border-radius:4px; color:var(--primary);">B100</code> →
+              Bertaruh Besar 100 pt</li>
+            <li><code style="background:#000; padding:2px 6px; border-radius:4px; color:var(--primary);">K50</code> →
+              Bertaruh Kecil 50 pt</li>
+            <li><code style="background:#000; padding:2px 6px; border-radius:4px; color:var(--primary);">GA200</code> →
+              Bertaruh Ganjil 200 pt</li>
+            <li><code style="background:#000; padding:2px 6px; border-radius:4px; color:var(--primary);">14J100</code> →
+              Menebak spesifik total dadu berjumlah 14 seharga 100 pt <span style="color:#888; font-size:0.8rem;">(Range
+                J: angka 4 sampai 17)</span></li>
+            <li><code style="background:#000; padding:2px 6px; border-radius:4px; color:var(--primary);">5TS100</code> →
+              Menebak terjadi Triple dengan angka 5 (5-5-5) seharga 100 pt <span
+                style="color:#888; font-size:0.8rem;">(Range TS: Dadu 1 sampai 6)</span></li>
+            <li><code style="background:#000; padding:2px 6px; border-radius:4px; color:var(--primary);">4DS100</code> →
+              Menebak dadu spesifik keluar angka 4 minimal satu buah seharga 100 pt <span
+                style="color:#888; font-size:0.8rem;">(Range DS: Dadu 1 sampai 6)</span></li>
           </ul>
         </div>
 
         <h3 style="color:var(--primary); font-size:1.1rem; margin-top:20px;">🎁 Klaim Cashback (Turnover)</h3>
-        <div style="background:#0f172a; padding:15px; border-radius:8px; border-left:4px solid var(--success); margin-bottom:15px;">
-          <p style="font-size:0.9rem; color:var(--text-muted); line-height:1.5;">Setiap kali bermain, kamu mengumpulkan poin Turnover. Jika syarat Turnover sudah penuh 100%, kamu bisa mencairkan <strong>Cashback 1%</strong> dari total taruhanmu! Caranya gampang:</p>
+        <div
+          style="background:#0f172a; padding:15px; border-radius:8px; border-left:4px solid var(--success); margin-bottom:15px;">
+          <p style="font-size:0.9rem; color:var(--text-muted); line-height:1.5;">Setiap kali bermain, kamu mengumpulkan
+            poin Turnover. Jika syarat Turnover sudah penuh 100%, kamu bisa mencairkan <strong>Cashback 1%</strong> dari
+            total taruhanmu! Caranya gampang:</p>
           <ul style="font-size:0.9rem; color:var(--text-muted); line-height:1.6; padding-left:20px; margin-top:5px;">
-            <li>Ketik <code style="background:#000; padding:2px 6px; border-radius:4px; color:var(--success);">TR</code> di Grup Live atau kirim langsung ke Telegram Bot.</li>
+            <li>Ketik <code style="background:#000; padding:2px 6px; border-radius:4px; color:var(--success);">TR</code>
+              di Grup Live atau kirim langsung ke Telegram Bot.</li>
             <li>Pastikan progres bar TO (Turnover) di profil atas sudah penuh.</li>
           </ul>
         </div>
 
         <h3 style="color:var(--primary); font-size:1.1rem; margin-top:20px;">💵 Panduan Saldo & Withdraw</h3>
         <p style="font-size:0.9rem;">
-          Semua deposit akan otomatis menambahkan Syarat <strong>Sisa Turnover (2x Lipat dari nominal Deposit)</strong> berjalan.<br>
-          Setiap kali kamu **Bertaruh (Bet)** di meja, maka *Sisa Turnover* otomatis akan **Berkurang**. Tanpa menyelesaikan target Sisa Turnover (menjadi Lunas / 0), tombol di tab "💸 WD" tidak akan terbuka.<br><br>
-          Untuk memproses WD, pastikan Sisa Turnover sudah Lunas. Masukkan nominal pada form lalu tunggu Administrator yang akan mengecek & mengirim transfer.
+          Semua deposit akan otomatis menambahkan Syarat <strong>Sisa Turnover (2x Lipat dari nominal Deposit)</strong>
+          berjalan.<br>
+          Setiap kali kamu **Bertaruh (Bet)** di meja, maka *Sisa Turnover* otomatis akan **Berkurang**. Tanpa
+          menyelesaikan target Sisa Turnover (menjadi Lunas / 0), tombol di tab "💸 WD" tidak akan terbuka.<br><br>
+          Untuk memproses WD, pastikan Sisa Turnover sudah Lunas. Masukkan nominal pada form lalu tunggu Administrator
+          yang akan mengecek & mengirim transfer.
         </p>
 
         <h3 style="color:var(--primary); font-size:1.1rem; margin-top:20px;">🧧 Fitur Sosial: Transfer & Angpao</h3>
-        <div style="background:#2d1b2e; padding:15px; border-radius:8px; border-left:4px solid #ef4444; margin-bottom:15px;">
-          <p style="font-size:0.9rem; color:var(--text-muted); line-height:1.5;">Berbagi rezeki atau gacha hadiah ke member lain tanpa biaya (Fee 0%):</p>
+        <div
+          style="background:#2d1b2e; padding:15px; border-radius:8px; border-left:4px solid #ef4444; margin-bottom:15px;">
+          <p style="font-size:0.9rem; color:var(--text-muted); line-height:1.5;">Berbagi rezeki atau gacha hadiah ke
+            member lain tanpa biaya (Fee 0%):</p>
           <ul style="font-size:0.9rem; color:var(--text-muted); line-height:1.6; padding-left:20px; margin-top:5px;">
-            <li><strong>Transfer:</strong> Ketik <code style="background:#000; padding:2px 6px; border-radius:4px; color:#ef4444;">TF [Nominal] [ID_Penerima]</code> di chat bot/grup. (Contoh: TF 50 12345678).</li>
-            <li><strong>Angpao Gacha (Random):</strong> Ketik <code style="background:#000; padding:2px 6px; border-radius:4px; color:#ef4444;">PAO [Total_Nominal] [Batas_Orang]</code> <b>(Harus di dalam Grup)</b>. Angpao akan muncul di grup itu dan siapa cepat dia dapat dengan nilai acak (gacha).</li>
-            <li><strong>Angpao Rata:</strong> Ketik <code style="background:#000; padding:2px 6px; border-radius:4px; color:#ef4444;">PAOF [Total_Nominal] [Batas_Orang]</code>. Mirip PAO tapi semua orang yang grab dapat jumlah poin sama rata persis.</li>
+            <li><strong>Transfer:</strong> Ketik <code
+                style="background:#000; padding:2px 6px; border-radius:4px; color:#ef4444;">TF [Nominal] [ID_Penerima]</code>
+              di chat bot/grup. (Contoh: TF 50 12345678).</li>
+            <li><strong>Angpao Gacha (Random):</strong> Ketik <code
+                style="background:#000; padding:2px 6px; border-radius:4px; color:#ef4444;">PAO [Total_Nominal] [Batas_Orang]</code>
+              <b>(Harus di dalam Grup)</b>. Angpao akan muncul di grup itu dan siapa cepat dia dapat dengan nilai acak
+              (gacha).</li>
+            <li><strong>Angpao Rata:</strong> Ketik <code
+                style="background:#000; padding:2px 6px; border-radius:4px; color:#ef4444;">PAOF [Total_Nominal] [Batas_Orang]</code>.
+              Mirip PAO tapi semua orang yang grab dapat jumlah poin sama rata persis.</li>
           </ul>
         </div>
 
         <h3 style="color:var(--primary); font-size:1.1rem; margin-top:20px;">📞 Kesulitan & Bantuan CS?</h3>
         <p style="font-size:0.9rem;">
-          Jika deposit kamu belum masuk lewati 10 menit, atau bot lemot (<em>Down</em>), kamu tidak perlu cemas. Segala transaksi terekam otomatis di database yang sangat aman.<br/>
-          Hubungi pihak CS Resmi kita di Telegram via Command Bot: <code style="background:#000; padding:2px 6px; border-radius:4px; color:var(--primary);">/kontak</code>
+          Jika deposit kamu belum masuk lewati 10 menit, atau bot lemot (<em>Down</em>), kamu tidak perlu cemas. Segala
+          transaksi terekam otomatis di database yang sangat aman.<br />
+          Hubungi pihak CS Resmi kita di Telegram via Command Bot: <code
+            style="background:#000; padding:2px 6px; border-radius:4px; color:var(--primary);">/kontak</code>
         </p>
 
         <h3 style="color:var(--primary); font-size:1.1rem; margin-top:20px;">📜 Tabel Pasar Taruhan (Live)</h3>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">Data Limits & Hadiah ini menyesuaikan limit Bandar Pusat detik ini:</p>
-        
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">Data Limits & Hadiah ini menyesuaikan
+          limit Bandar Pusat detik ini:</p>
+
         <div id="guide-table-container">
           <div class="loading">⏳ Memuat tabel odds dari server...</div>
         </div>
@@ -260,11 +331,16 @@
   </div>
 
   <!-- Success Withdraw / Deposit -->
-  <div id="success-msg" class="success-msg" style="display:none; flex-direction:column; align-items:center; justify-content:center; height:100vh;">
+  <div id="success-msg" class="success-msg"
+    style="display:none; flex-direction:column; align-items:center; justify-content:center; height:100vh;">
     <div class="icon" style="font-size:5rem; margin-bottom:16px;">✅</div>
     <h2 id="success-title" style="margin-bottom:8px;">Sukses!</h2>
-    <p id="success-desc" style="font-size: 1.1rem; color: var(--text-muted); font-weight: bold; margin-bottom: 30px; text-align:center;">Aksi berhasil dicatat oleh sistem.</p>
-    <button class="btn btn-primary" style="padding: 10px 30px; font-weight: bold; letter-spacing: 1px; width: auto; border-radius: 30px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);" onclick="closeSuccessMsg()">Kembali</button>
+    <p id="success-desc"
+      style="font-size: 1.1rem; color: var(--text-muted); font-weight: bold; margin-bottom: 30px; text-align:center;">
+      Aksi berhasil dicatat oleh sistem.</p>
+    <button class="btn btn-primary"
+      style="padding: 10px 30px; font-weight: bold; letter-spacing: 1px; width: auto; border-radius: 30px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);"
+      onclick="closeSuccessMsg()">Kembali</button>
   </div>
 
   <!-- Floating Deposit Button -->
@@ -274,51 +350,85 @@
 
   <!-- QRIS / Payment Overlay -->
   <div id="payment-overlay" class="payment-overlay" style="display:none">
-    <div class="payment-box card-dark" style="position:relative; width: 90%; max-width: 400px; margin: auto; max-height: 95vh; overflow-y: auto; overflow-x: hidden;">
+    <div class="payment-box card-dark"
+      style="position:relative; width: 90%; max-width: 400px; margin: auto; max-height: 95vh; overflow-y: auto; overflow-x: hidden;">
       <h3 style="text-align:center; color: var(--success); margin-bottom: 8px;">Pindai QR / Bayar</h3>
-      <p id="payment-instruction" style="text-align:center; font-size: 0.9em; color: var(--text-muted); margin-bottom: 10px;">Silakan selesaikan pembayaran.</p>
-      <div style="text-align:center; font-size:1.4rem; font-weight:900; color:var(--warning); margin-bottom:15px; font-family:monospace;">⏳ <span id="overlay-timer-qris">05:00</span></div>
-      
+      <p id="payment-instruction"
+        style="text-align:center; font-size: 0.9em; color: var(--text-muted); margin-bottom: 10px;">Silakan selesaikan
+        pembayaran.</p>
+      <div
+        style="text-align:center; font-size:1.4rem; font-weight:900; color:var(--warning); margin-bottom:15px; font-family:monospace;">
+        ⏳ <span id="overlay-timer-qris">05:00</span></div>
+
       <div id="qr-container" style="text-align:center; display:none;">
-        <img id="qr-image" src="" alt="QR Bayar" style="max-width: 100%; max-height: 250px; border-radius: 12px; margin-bottom: 16px; border: 4px solid #fff; background: #fff;" />
-        
+        <img id="qr-image" src="" alt="QR Bayar"
+          style="max-width: 100%; max-height: 250px; border-radius: 12px; margin-bottom: 16px; border: 4px solid #fff; background: #fff;" />
+
         <!-- COPY NOMINAL BOX -->
-        <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 20px;">
-           <span style="font-size: 0.85em; color: var(--text-muted); display: block; margin-bottom: 4px;">Transfer Tepat Nominal:</span>
-           <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-             <span id="copy-nominal-text" style="font-size: 1.5em; font-weight: 900; color: #fff; letter-spacing: 1px;">0</span>
-             <button onclick="copyNominal()" style="background: var(--primary); color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.85em;">Salin</button>
-           </div>
+        <div
+          style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 20px;">
+          <span style="font-size: 0.85em; color: var(--text-muted); display: block; margin-bottom: 4px;">Transfer Tepat
+            Nominal:</span>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <span id="copy-nominal-text"
+              style="font-size: 1.5em; font-weight: 900; color: #fff; letter-spacing: 1px;">0</span>
+            <button onclick="copyNominal()"
+              style="background: var(--primary); color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.85em;">Salin</button>
+          </div>
         </div>
 
         <!-- EMBED IMAGE INSTRUCTION -->
-        <img src="https://i.ibb.co.com/cXxvFc70/Untitled-2.png" style="width: 100%; border-radius: 12px; margin-bottom: 20px;">
+        <img src="https://i.ibb.co.com/cXxvFc70/Untitled-2.png"
+          style="width: 100%; border-radius: 12px; margin-bottom: 20px;">
       </div>
-      
+
       <div id="dana-container" style="text-align:center; display:none; margin-bottom: 20px;">
-        <a id="dana-link" href="#" target="_blank" class="btn btn-primary" style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding: 14px 24px; font-weight: bold; text-transform: uppercase; font-size:1em; text-decoration:none;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        <a id="dana-link" href="#" target="_blank" class="btn btn-primary"
+          style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding: 14px 24px; font-weight: bold; text-transform: uppercase; font-size:1em; text-decoration:none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" />
+            <line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
           BUKA APLIKASI DANA
         </a>
       </div>
 
       <div style="display:flex; flex-direction:column; gap:10px;">
-        <button id="btn-cek-bayar" class="btn btn-primary" style="display:flex; align-items:center; justify-content:center; gap:10px; font-weight:bold;" onclick="checkPaymentStatus()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.4"/></svg>
+        <button id="btn-cek-bayar" class="btn btn-primary"
+          style="display:flex; align-items:center; justify-content:center; gap:10px; font-weight:bold;"
+          onclick="checkPaymentStatus()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10" />
+            <path d="M3.51 15a9 9 0 1 0 .49-4.4" />
+          </svg>
           CEK PEMBAYARAN
         </button>
-        <button id="btn-kirim-tele" class="btn" style="display:flex; align-items:center; justify-content:center; gap:10px; background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border); font-weight:bold;" onclick="sendQRToTele()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+        <button id="btn-kirim-tele" class="btn"
+          style="display:flex; align-items:center; justify-content:center; gap:10px; background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border); font-weight:bold;"
+          onclick="sendQRToTele()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+          </svg>
           KIRIM KE TELEGRAM
         </button>
-        <button class="btn" style="background:transparent; color:var(--text); margin-top:5px; font-weight:bold; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:8px;" onclick="closePaymentOverlay()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        <button class="btn"
+          style="background:transparent; color:var(--text); margin-top:5px; font-weight:bold; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:8px;"
+          onclick="closePaymentOverlay()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
           KEMBALI KE BERANDA
         </button>
       </div>
 
       <!-- Success Animation Overlay (internal) -->
-      <div id="payment-success-anim" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.95); border-radius:inherit; z-index:10; align-items:center; justify-content:center; flex-direction:column;">
+      <div id="payment-success-anim"
+        style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.95); border-radius:inherit; z-index:10; align-items:center; justify-content:center; flex-direction:column;">
         <div class="success-checkmark">
           <div class="check-icon">
             <span class="icon-line line-tip"></span>
@@ -335,41 +445,71 @@
 
   <!-- Manual Deposit Overlay -->
   <div id="manual-overlay" class="payment-overlay" style="display:none">
-    <div class="payment-box card-dark" style="position:relative; width: 90%; max-width: 400px; margin: auto; max-height: 95vh; overflow-y: auto; overflow-x: hidden;">
+    <div class="payment-box card-dark"
+      style="position:relative; width: 90%; max-width: 400px; margin: auto; max-height: 95vh; overflow-y: auto; overflow-x: hidden;">
       <h3 style="text-align:center; color: var(--success); margin-bottom: 8px;">Detail Transfer Manual</h3>
-      <p style="text-align:center; font-size: 0.9em; color: var(--text-muted); margin-bottom: 10px;">Harap transfer sesuai nominal unik (hingga 3 digit terakhir) agar diproses otomatis.</p>
-      <div style="text-align:center; font-size:1.4rem; font-weight:900; color:var(--warning); margin-bottom:15px; font-family:monospace;">⏳ <span id="overlay-timer-manual">05:00</span></div>
-      
+      <p style="text-align:center; font-size: 0.9em; color: var(--text-muted); margin-bottom: 10px;">Harap transfer
+        sesuai nominal unik (hingga 3 digit terakhir) agar diproses otomatis.</p>
+      <div
+        style="text-align:center; font-size:1.4rem; font-weight:900; color:var(--warning); margin-bottom:15px; font-family:monospace;">
+        ⏳ <span id="overlay-timer-manual">05:00</span></div>
+
       <!-- COPY NOMINAL BOX -->
-      <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 20px;">
-         <span style="font-size: 0.85em; color: var(--text-muted); display: block; margin-bottom: 4px;">Total yang harus ditransfer:</span>
-         <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-           <span id="manual-nominal-text" style="font-size: 1.5em; font-weight: 900; color: #fff; letter-spacing: 1px;">0</span>
-           <button onclick="copyManualNominal()" style="background: var(--primary); color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.85em;">Salin</button>
-         </div>
+      <div
+        style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 20px;">
+        <span style="font-size: 0.85em; color: var(--text-muted); display: block; margin-bottom: 4px;">Total yang harus
+          ditransfer:</span>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <span id="manual-nominal-text"
+            style="font-size: 1.5em; font-weight: 900; color: #fff; letter-spacing: 1px;">0</span>
+          <button onclick="copyManualNominal()"
+            style="background: var(--primary); color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.85em;">Salin</button>
+        </div>
       </div>
 
       <!-- REKENING BOX -->
-      <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: left;">
-         <div style="font-size: 1em; color: var(--warning); font-weight: bold; margin-bottom: 8px;" id="manual-bank-name">BANK BCA</div>
-         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-           <span id="manual-rek-no" style="font-size: 1.25em; font-weight: 900; color: #fff; letter-spacing: 1.5px; font-family: monospace;">1234567890</span>
-           <button onclick="copyManualRek()" style="background: rgba(255,255,255,0.1); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.75em;">Salin Rek</button>
-         </div>
-         <div style="font-size: 0.85em; color: var(--text-muted);">Atas Nama (A/N): <strong id="manual-rek-name" style="color: #fff;">A/N BANDAR</strong></div>
+      <div
+        style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: left;">
+        <div style="font-size: 1em; color: var(--warning); font-weight: bold; margin-bottom: 8px;"
+          id="manual-bank-name">BANK BCA</div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <span id="manual-rek-no"
+            style="font-size: 1.25em; font-weight: 900; color: #fff; letter-spacing: 1.5px; font-family: monospace;">1234567890</span>
+          <button onclick="copyManualRek()"
+            style="background: rgba(255,255,255,0.1); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.75em;">Salin
+            Rek</button>
+        </div>
+        <div style="font-size: 0.85em; color: var(--text-muted);">Atas Nama (A/N): <strong id="manual-rek-name"
+            style="color: #fff;">A/N BANDAR</strong></div>
       </div>
 
       <div style="display:flex; flex-direction:column; gap:10px;">
-        <button id="btn-kirim-tele-manual" class="btn border border-slate-700 hover:border-slate-500" style="background:rgba(255,255,255,0.05); color:var(--text); font-weight:bold; display:flex; align-items:center; justify-content:center; gap:10px; padding: 14px;" onclick="sendManualToTele()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+        <button id="btn-kirim-tele-manual" class="btn border border-slate-700 hover:border-slate-500"
+          style="background:rgba(255,255,255,0.05); color:var(--text); font-weight:bold; display:flex; align-items:center; justify-content:center; gap:10px; padding: 14px;"
+          onclick="sendManualToTele()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+          </svg>
           KIRIM KE TELEGRAM
         </button>
-        <button id="btn-manual-sudah" class="btn btn-primary" style="display:flex; align-items:center; justify-content:center; gap:10px; font-weight:bold; padding: 14px;" onclick="confirmManualTransfer()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <button id="btn-manual-sudah" class="btn btn-primary"
+          style="display:flex; align-items:center; justify-content:center; gap:10px; font-weight:bold; padding: 14px;"
+          onclick="confirmManualTransfer()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+          </svg>
           SAYA SUDAH TRANSFER
         </button>
-        <button class="btn" style="background:transparent; color:var(--text); font-weight:bold; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:8px;" onclick="closeManualOverlay()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        <button class="btn"
+          style="background:transparent; color:var(--text); font-weight:bold; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:8px;"
+          onclick="closeManualOverlay()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
           KEMBALI KE BERANDA
         </button>
       </div>
