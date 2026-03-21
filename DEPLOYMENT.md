@@ -18,6 +18,10 @@ sudo apt install -y nodejs
 
 # Install PM2 secara global
 sudo npm install -g pm2
+
+# depedencies
+sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+
 ```
 
 ## 2. Upload / Clone Source Code ke VPS
