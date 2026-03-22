@@ -88,6 +88,22 @@ router.patch('/:id/approve', auth, async (req, res) => {
     wd.processedAt = new Date();
     await wd.save();
 
+    // SINKRONISASI TELEGRAM NOTIFIKASI
+    if (wd.notifyMessageId) {
+      const config = await Setting.findOne();
+      if (config.admin && config.admin.notificationTelegramId && process.env.NOTIFY_BOT_TOKEN) {
+        try {
+          const axios = require('axios');
+          await axios.post(`https://api.telegram.org/bot${process.env.NOTIFY_BOT_TOKEN}/editMessageText`, {
+            chat_id: config.admin.notificationTelegramId,
+            message_id: wd.notifyMessageId,
+            text: `🔔 *INFO WITHDRAW MANUAL*\n\n👤 User: @${wd.telegramId}\n💰 Jumlah: *${wd.amount} pt*\n\n✅ *STATUS: DITERIMA*\nAlasan: Diproses via Admin Dashboard`,
+            parse_mode: 'Markdown'
+          });
+        } catch(e) { console.error('Gagal sync notif admin wd:', e.message); }
+      }
+    }
+
     // Kurangi saldo user
     await User.findOneAndUpdate(
       { telegramId: wd.telegramId },
@@ -111,9 +127,25 @@ router.patch('/:id/reject', auth, async (req, res) => {
     if (wd.status !== 'pending') return res.status(400).json({ error: 'Already processed' });
 
     wd.status = 'rejected';
-    wd.adminNote = req.body.adminNote || '';
+    wd.adminNote = req.body.adminNote || 'Ditolak via Dashboard';
     wd.processedAt = new Date();
     await wd.save();
+
+    // SINKRONISASI TELEGRAM NOTIFIKASI
+    if (wd.notifyMessageId) {
+      const config = await Setting.findOne();
+      if (config.admin && config.admin.notificationTelegramId && process.env.NOTIFY_BOT_TOKEN) {
+        try {
+          const axios = require('axios');
+          await axios.post(`https://api.telegram.org/bot${process.env.NOTIFY_BOT_TOKEN}/editMessageText`, {
+            chat_id: config.admin.notificationTelegramId,
+            message_id: wd.notifyMessageId,
+            text: `🔔 *INFO WITHDRAW MANUAL*\n\n👤 User: @${wd.telegramId}\n💰 Jumlah: *${wd.amount} pt*\n\n❌ *STATUS: DITOLAK*\nAlasan: ${wd.adminNote}`,
+            parse_mode: 'Markdown'
+          });
+        } catch(e) { console.error('Gagal sync notif admin wd reject:', e.message); }
+      }
+    }
 
     // Kembalikan saldo user
     await User.findOneAndUpdate(

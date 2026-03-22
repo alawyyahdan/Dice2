@@ -22,7 +22,7 @@ export default function SettingsPage() {
 
   // Security State
   const [adminProfile, setAdminProfile] = useState({ username: '', is2FAEnabled: false });
-  const [formSecurity, setFormSecurity] = useState({ username: '', password: '' });
+  const [formSecurity, setFormSecurity] = useState({ username: '', password: '', notificationTelegramId: '' });
   const [qrSetup, setQrSetup] = useState({ secret: '', qrUrl: '' });
   const [otpInput, setOtpInput] = useState('');
 
@@ -156,7 +156,7 @@ export default function SettingsPage() {
 
       const profile = await api.getAdminProfile();
       setAdminProfile(profile);
-      setFormSecurity({ username: profile.username, password: '' });
+      setFormSecurity({ username: profile.username, password: '', notificationTelegramId: profile.notificationTelegramId || '' });
     } catch (e) {
       console.error(e);
     }
@@ -204,7 +204,11 @@ export default function SettingsPage() {
   const handleUpdateProfile = async () => {
     setSaving(true);
     try {
-      await api.updateAdminProfile({ username: formSecurity.username, password: formSecurity.password || undefined });
+      await api.updateAdminProfile({ 
+        username: formSecurity.username, 
+        password: formSecurity.password || undefined,
+        notificationTelegramId: formSecurity.notificationTelegramId
+      });
       alert('✅ Profil Admin berhasil diperbarui!');
       setFormSecurity({ ...formSecurity, password: '' });
       loadSettings();
@@ -1164,6 +1168,19 @@ export default function SettingsPage() {
                   onChange={(e) => setFormSecurity({...formSecurity, password: e.target.value})}
                   className="w-full bg-slate-900 border-2 border-slate-700 rounded-xl py-3 px-4 text-white font-mono outline-none focus:border-amber-500 transition-colors"
                 />
+              </div>
+              <div>
+                <label className="text-xs font-black text-amber-500/80 uppercase tracking-widest block mb-2">ID Telegram Admin (Notifikasi Depo/WD Manual)</label>
+                <input 
+                  type="text"
+                  placeholder="Isi Telegram ID (Angka)"
+                  value={formSecurity.notificationTelegramId}
+                  onChange={(e) => setFormSecurity({...formSecurity, notificationTelegramId: e.target.value})}
+                  className="w-full bg-slate-900 border-2 border-slate-700 rounded-xl py-3 px-4 text-white font-mono outline-none focus:border-amber-500 transition-colors"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  *Bot akan mengirim pesan pemberitahuan otomatis ke ID ini saat ada formulir Deposit & Withdraw Manual baru dari user.
+                </p>
               </div>
               <button 
                 onClick={handleUpdateProfile} 

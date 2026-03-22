@@ -20,7 +20,8 @@ router.get('/profile', async (req, res) => {
     
     res.json({
       username: config.admin?.username || process.env.ADMIN_USERNAME,
-      is2FAEnabled: config.admin?.is2FAEnabled || false
+      is2FAEnabled: config.admin?.is2FAEnabled || false,
+      notificationTelegramId: config.admin?.notificationTelegramId || ''
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -30,13 +31,14 @@ router.get('/profile', async (req, res) => {
 // PUT /api/admin/profile
 router.put('/profile', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, notificationTelegramId } = req.body;
     let config = await Setting.findOne();
     if (!config) config = new Setting();
 
     if (!config.admin) config.admin = {};
-    if (username) config.admin.username = username;
-    if (password) config.admin.password = password; // Sebaiknya dihash, tapi ini base MVP Dice2
+    if (username !== undefined) config.admin.username = username;
+    if (password) config.admin.password = password; 
+    if (notificationTelegramId !== undefined) config.admin.notificationTelegramId = notificationTelegramId;
 
     await config.save();
     res.json({ success: true, message: 'Profil admin diperbarui!' });

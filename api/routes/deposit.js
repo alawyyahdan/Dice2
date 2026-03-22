@@ -142,6 +142,35 @@ router.post('/create', async (req, res) => {
         paymentData: JSON.stringify(bankInfo), 
         status: 'pending'
       });
+
+      // NOTIFIKASI TELEGRAM ADMIN JIKA MODE MANUAL
+      console.log('[NOTIFY DEBUG DEPOSIT] notifyId:', config.admin?.notificationTelegramId, '| token:', !!process.env.NOTIFY_BOT_TOKEN);
+      if (config.admin && config.admin.notificationTelegramId && process.env.NOTIFY_BOT_TOKEN) {
+        try {
+          const axios = require('axios');
+          const message = `🔔 *INFO DEPOSIT MANUAL MUNCUL!*\n\n👤 User: @${user.username || telegramId}\n💰 Jumlah: *${amount} pt* (Rp ${finalIdrAmount.toLocaleString('id-ID')})\n🏦 Bank: ${paymentMethod}\n💳 Rekening: ${bankInfo.accountNumber || '-'} A/N ${bankInfo.accountName || '-'}\n\nSilakan validasi di Dashboard Admin!`;
+          
+          const reply_markup = {
+            inline_keyboard: [
+              [
+                { text: "✅ Terima", callback_data: `depo_approve_${deposit._id}` },
+                { text: "❌ Tolak", callback_data: `depo_reject_${deposit._id}` }
+              ]
+            ]
+          };
+
+          const response = await axios.post(`https://api.telegram.org/bot${process.env.NOTIFY_BOT_TOKEN}/sendMessage`, { 
+            chat_id: config.admin.notificationTelegramId, 
+            text: message, 
+            parse_mode: 'Markdown',
+            reply_markup
+          });
+          
+          deposit.notifyMessageId = response.data.result.message_id;
+          await deposit.save();
+        } catch(e) { console.error('[NOTIFY ERROR DEPOSIT]', e.response?.data || e.message); }
+      }
+
       return res.json({ message: 'Instruksi transfer dibuat', data: deposit });
     }
 
@@ -374,9 +403,26 @@ router.post('/action', require('../middlewares/authMiddleware'), async (req, res
     if (!dep) return res.status(404).json({ error: 'Deposit tidak ditemukan' });
     if (dep.status !== 'pending') return res.status(400).json({ error: 'Deposit sudah diproses' });
 
-    dep.status = action;
+    dep.status = action; // 'success' or 'failed'
     dep.updatedAt = Date.now();
     await dep.save();
+
+    // SINKRONISASI TELEGRAM NOTIFIKASI
+    if (dep.notifyMessageId) {
+      const config = await Setting.findOne();
+      if (config.admin && config.admin.notificationTelegramId && process.env.NOTIFY_BOT_TOKEN) {
+        try {
+          const axios = require('axios');
+          const statusText = action === 'success' ? '✅ *STATUS: DITERIMA*' : '❌ *STATUS: DITOLAK*';
+          await axios.post(`https://api.telegram.org/bot${process.env.NOTIFY_BOT_TOKEN}/editMessageText`, {
+            chat_id: config.admin.notificationTelegramId,
+            message_id: dep.notifyMessageId,
+            text: `🔔 *INFO DEPOSIT MANUAL*\n\n👤 User: @${dep.telegramId}\n💰 Jumlah: *${dep.amount} pt*\n\n${statusText}\nAlasan: Diproses via Admin Dashboard`,
+            parse_mode: 'Markdown'
+          });
+        } catch(e) { console.error('Gagal sync notif admin deposit:', e.message); }
+      }
+    }
 
     if (action === 'success') {
       const nominal = dep.amount;

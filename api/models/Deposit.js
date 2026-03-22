@@ -11,6 +11,9 @@ const depositSchema = new mongoose.Schema({
   paymentData: String, // Menyimpan URL DANA atau URL Gambar QRIS
   checkoutUrl: String, // Endpoint untuk mini app jika ada opsi eksternal
   qrMessageId: Number, // ID pesan QR di Telegram untuk auto-delete
+  notifyMessageId: Number, // ID pesan notifikasi ke admin
+  adminNote: { type: String, default: '' },
+  processedAt: Date,
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

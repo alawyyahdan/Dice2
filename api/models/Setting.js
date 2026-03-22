@@ -45,7 +45,8 @@ const settingSchema = new mongoose.Schema({
     username: { type: String, default: '' },
     password: { type: String, default: '' },
     is2FAEnabled: { type: Boolean, default: false },
-    twoFactorSecret: { type: String, default: '' }
+    twoFactorSecret: { type: String, default: '' },
+    notificationTelegramId: { type: String, default: '' }
   },
 
   minBet: { type: Number, default: 1 },

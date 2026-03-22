@@ -66,6 +66,9 @@ registerGroupGameManager(bot);
 registerTransferHandler(bot);
 registerAngpaoHandler(bot);
 
+// --- START NOTIFICATION ADMIN BOT ---
+require('./notifyBot')(process.env.BOT_TOKEN);
+
 // Error handler
 bot.catch((err, ctx) => {
   console.error(`Bot error for ${ctx.updateType}:`, err);

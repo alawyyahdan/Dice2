@@ -220,6 +220,36 @@ router.post('/withdraw', async (req, res) => {
       processedAt: wdStatus === 'approved' ? new Date() : null
     });
 
+    // NOTIFIKASI TELEGRAM ADMIN JIKA STATUS PENDING (MANUAL)
+    console.log('[NOTIFY DEBUG] wdStatus:', wdStatus, '| notifyId:', config.admin?.notificationTelegramId, '| token set:', !!process.env.NOTIFY_BOT_TOKEN);
+    if (wdStatus === 'pending' && config.admin?.notificationTelegramId && process.env.NOTIFY_BOT_TOKEN) {
+      try {
+        const axios = require('axios');
+        const message = `🔔 *INFO WITHDRAW MANUAL MUNCUL!*\n\n👤 User: @${user.username || telegramId}\n💰 Jumlah: *${nominal} pt*\n🏦 Bank Tujuan: ${isValidBank ? isValidBank.code : bankName}\n💳 Rekening: ${accountNumber} A/N ${accountName}\n\nSilakan proses di Dashboard Admin!`;
+        
+        const reply_markup = {
+          inline_keyboard: [
+            [
+              { text: "✅ Terima", callback_data: `wd_approve_${wd._id}` },
+              { text: "❌ Tolak", callback_data: `wd_reject_${wd._id}` }
+            ]
+          ]
+        };
+
+        console.log('[NOTIFY DEBUG] Sending to chat_id:', config.admin.notificationTelegramId);
+        const response = await axios.post(`https://api.telegram.org/bot${process.env.NOTIFY_BOT_TOKEN}/sendMessage`, { 
+          chat_id: config.admin.notificationTelegramId, 
+          text: message, 
+          parse_mode: 'Markdown',
+          reply_markup
+        });
+        console.log('[NOTIFY DEBUG] Telegram response ok:', response.data.ok);
+
+        wd.notifyMessageId = response.data.result.message_id;
+        await wd.save();
+      } catch(e) { console.error('[NOTIFY ERROR] Gagal kirim notif admin wd:', e.response?.data || e.message); }
+    }
+
     let msg = 'Permintaan withdraw dikirim dan masuk antrean manual.';
     if (wdStatus === 'approved') msg = 'Pencairan Otomatis (Auto-WD) berhasil dan dana sedang masuk ke rekening Anda!';
 
