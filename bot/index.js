@@ -13,15 +13,32 @@ const { registerGroupGameManager } = require('./handlers/groupGameManager');
 const { registerTransferHandler } = require('./handlers/transferHandler');
 const { registerAngpaoHandler } = require('./handlers/angpaoHandler');
 
-const bot = new Telegraf(process.env.BOT_TOKEN);
+const botToken = process.env.BOT_TOKEN;
+const mongoUri = process.env.MONGODB_URI;
+
+if (!botToken) {
+  console.error('❌ Bot error: BOT_TOKEN is missing in .env file');
+  process.exit(1);
+}
+
+if (!mongoUri) {
+  console.error('❌ MongoDB error: MONGODB_URI is missing in .env file');
+  process.exit(1);
+}
+
+const bot = new Telegraf(botToken);
 
 // Connect MongoDB
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(mongoUri)
   .then(async () => {
+    console.log('✅ Connected to MongoDB');
     const settingsService = require('../api/services/settingsService');
     await settingsService.loadSettings();
   })
-  .catch(err => { console.error('❌ MongoDB error:', err); process.exit(1); });
+  .catch(err => { 
+    console.error('❌ MongoDB connection error:', err.message); 
+    process.exit(1); 
+  });
 
 // Middleware: auto-create user & detect groups
 bot.use(userMiddleware);
