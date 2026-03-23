@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import StatsCard from '@/components/StatsCard';
+import ServerStatus from '@/components/ServerStatus';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
@@ -54,6 +55,8 @@ export default function DashboardPage() {
           <p className="text-slate-400 mt-2 text-lg font-medium">Ringkasan statistik real-time jaringan DiceBot.</p>
         </div>
       </div>
+
+      <ServerStatus />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         <StatsCard icon="👥" title="Total User" value={stats?.totalUsers || 0} color="blue" />

@@ -7,6 +7,7 @@ const Group = require('../models/Group');
 const Bet = require('../models/Bet');
 const User = require('../models/User');
 const axios = require('axios');
+const os = require('os');
 const requireAdmin = require('../middlewares/authMiddleware');
 
 // Validasi Admin (hanya bisa diakses jika sudah login)
@@ -148,14 +149,38 @@ router.get('/system/stats', async (req, res) => {
     // Biasanya Free Tier MongoDB Atlas itu 512MB
     const maxDbSize = 512; 
 
-    // Baca alokasi memory server untuk estimasi cache size
+    // Server Metrics
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const usedMem = totalMem - freeMem;
+    const memUsagePercent = ((usedMem / totalMem) * 100).toFixed(2);
+    
+    const loadAvg = os.loadavg();
+    const cpuCount = os.cpus().length;
+    const cpuUsagePercent = ((loadAvg[0] / cpuCount) * 100).toFixed(2);
+
+    const uptimeSeconds = os.uptime();
+    const days = Math.floor(uptimeSeconds / (24 * 3600));
+    const hours = Math.floor((uptimeSeconds % (24 * 3600)) / 3600);
+    const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+    const uptimeHuman = `${days}d ${hours}h ${minutes}m`;
+
     const memUsage = process.memoryUsage();
-    const cacheSizeMb = (memUsage.heapUsed / (1024 * 1024)).toFixed(2);
+    const nodeMemMb = (memUsage.rss / (1024 * 1024)).toFixed(2);
 
     res.json({
       dbUsed: parseFloat(dbUsedMb),
       dbMax: maxDbSize,
-      cacheSize: parseFloat(cacheSizeMb)
+      cpuUsage: parseFloat(cpuUsagePercent),
+      ramUsage: {
+        used: (usedMem / (1024 * 1024 * 1024)).toFixed(2), // GB
+        total: (totalMem / (1024 * 1024 * 1024)).toFixed(2), // GB
+        percent: parseFloat(memUsagePercent)
+      },
+      uptime: uptimeHuman,
+      nodeMem: parseFloat(nodeMemMb),
+      platform: os.platform(),
+      arch: os.arch()
     });
   } catch(err) {
     res.status(500).json({ error: err.message });
