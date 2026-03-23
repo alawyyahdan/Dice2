@@ -16,19 +16,36 @@ if [ "$NODE_VERSION" -lt 18 ]; then
 fi
 echo "✅ Node.js $(node -v) terdeteksi."
 
-# 2. Install System Dependencies (Canvas & Fonts Support)
+# 2. Cek File .env
+if [ ! -f .env ]; then
+    echo "⚠️  File .env tidak ditemukan!"
+    if [ -f .env.example ]; then
+        cp .env.example .env
+        echo "✅ .env.example disalin ke .env."
+    else
+        touch .env
+        echo "✅ File .env kosong dibuat."
+    fi
+    echo "❗ Silakan edit file .env dan masukkan konfigurasi yang diperlukan sebelum melanjutkan."
+    echo "❌ Instalasi dihentikan. Jalankan kembali script ini setelah .env diisi."
+    exit 1
+fi
+echo "✅ File .env ditemukan."
+
+
+# 3. Install System Dependencies (Canvas & Fonts Support)
 echo "📦 Menginstall dependencies sistem (Cairo, Pango, dkk)..."
 sudo apt-get update
 sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev build-essential
 
-# 3. Cek & Install PM2
+# 4. Cek & Install PM2
 if ! command -v pm2 &> /dev/null; then
     echo "⚙️ PM2 tidak ditemukan. Menginstall PM2 secara global..."
     sudo npm install -g pm2
 fi
 echo "✅ PM2 terinstall."
 
-# 4. Install NPM Dependencies tiap folder
+# 5. Install NPM Dependencies tiap folder
 echo "📂 Menginstall dependencies NPM..."
 
 echo "🔹 Folder root..."
@@ -43,13 +60,13 @@ cd bot && npm install && cd ..
 echo "🔹 Folder Dashboard..."
 cd dashboard && npm install && cd ..
 
-# 5. Build Dashboard (Next.js)
+# 6. Build Dashboard (Next.js)
 echo "🏗️ Memulali proses Build Dashboard (Next.js Production)..."
 cd dashboard
 npm run build
 cd ..
 
-# 6. Jalankan via PM2
+# 7. Jalankan via PM2
 echo "🚀 Menjalankan aplikasi via PM2..."
 
 # Hapus dulu kalau ada proses lama biar gak bentrok
