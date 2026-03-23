@@ -13,8 +13,9 @@ router.get('/', async (req, res) => {
     let pgBalance = 0;
     try {
       const balanceData = await paymentService.checkBalance();
-      if (balanceData && balanceData.balance) {
-        pgBalance = Number(balanceData.balance);
+      if (balanceData) {
+        // If balanceData is an object with balance prop, or just the balance number
+        pgBalance = Number(balanceData.balance !== undefined ? balanceData.balance : balanceData);
       }
     } catch (e) {
       console.warn('Unable to get PG balance for analytics:', e.message);
@@ -25,13 +26,15 @@ router.get('/', async (req, res) => {
       { $match: { status: 'success' } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
-    const totalDeposit = totalDepoAggr.length > 0 ? totalDepoAggr[0].total : 0;
+    // Multiply by 1000 (1 pt = 1000 IDR)
+    const totalDeposit = (totalDepoAggr.length > 0 ? totalDepoAggr[0].total : 0) * 1000;
 
     const totalWdAggr = await Withdraw.aggregate([
       { $match: { status: 'approved' } }, // Status is 'approved' for successful withdrawals
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
-    const totalWithdraw = totalWdAggr.length > 0 ? totalWdAggr[0].total : 0;
+    // Multiply by 1000 (1 pt = 1000 IDR)
+    const totalWithdraw = (totalWdAggr.length > 0 ? totalWdAggr[0].total : 0) * 1000;
 
     // 3. Daily Volume
     const dailyDepoAggr = await Deposit.aggregate([
@@ -57,13 +60,13 @@ router.get('/', async (req, res) => {
     // Format daily data into a simple map
     const dailyVolumeMap = {};
     dailyDepoAggr.forEach(d => {
-      dailyVolumeMap[d._id] = { date: d._id, deposit: d.deposit, withdraw: 0 };
+      dailyVolumeMap[d._id] = { date: d._id, deposit: d.deposit * 1000, withdraw: 0 };
     });
     dailyWdAggr.forEach(w => {
       if (!dailyVolumeMap[w._id]) {
         dailyVolumeMap[w._id] = { date: w._id, deposit: 0, withdraw: 0 };
       }
-      dailyVolumeMap[w._id].withdraw = w.withdraw;
+      dailyVolumeMap[w._id].withdraw = w.withdraw * 1000;
     });
 
     // Sort by date ascending
