@@ -47,8 +47,12 @@ module.exports = function startNotifyBot(mainBotToken) {
       await depo.save();
 
       // Tambah saldo + turnover
+      const nominal = depo.amount;
+      const topupTotal = nominal + (depo.bonusApplied || 0);
+      const finalTOInc = depo.promoId ? (depo.turnoverApplied || 0) : nominal;
+
       await User.findByIdAndUpdate(depo.userId, {
-        $inc: { balance: depo.amount, totalDeposit: depo.amount, turnoverRequired: depo.amount }
+        $inc: { balance: topupTotal, totalDeposit: nominal, turnoverRequired: finalTOInc }
       });
 
       // Notif user

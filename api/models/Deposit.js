@@ -12,6 +12,10 @@ const depositSchema = new mongoose.Schema({
   checkoutUrl: String, // Endpoint untuk mini app jika ada opsi eksternal
   qrMessageId: Number, // ID pesan QR di Telegram untuk auto-delete
   notifyMessageId: Number, // ID pesan notifikasi ke admin
+  promoId: String, // ID Promo yang dipakai saat deposit
+  promoName: String, // Nama Promo
+  bonusApplied: { type: Number, default: 0 }, // Bonus coin yang didapatkan
+  turnoverApplied: { type: Number, default: 0 }, // Syarat TO yang dibebankan
   adminNote: { type: String, default: '' },
   processedAt: Date,
   createdAt: { type: Date, default: Date.now },

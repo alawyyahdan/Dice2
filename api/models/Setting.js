@@ -57,10 +57,24 @@ const settingSchema = new mongoose.Schema({
   botStartTime: { type: Date, default: Date.now },
   groupStartTime: { type: Date, default: Date.now },
 
+  forceSub: {
+    isActive: { type: Boolean, default: false },
+    channelUsername: { type: String, default: '' },
+    channelUrl: { type: String, default: '' }
+  },
+
   paymentGateway: {
     providerType: { type: String, enum: ['sitranfer', 'manual', 'none'], default: 'sitranfer' },
     minDeposit: { type: Number, default: 10000 },
     maxDeposit: { type: Number, default: 50000000 },
+    depositPromos: [{
+      id: String,
+      name: String,
+      type: { type: String, enum: ['percent', 'fixed'], default: 'percent' },
+      bonusValue: Number,
+      turnoverMultiplier: { type: Number, default: 0 },
+      isActive: { type: Boolean, default: true }
+    }],
     sitranfer: {
       merchantId: { type: String, default: '' },
       callbackUrl: { type: String, default: '' },
@@ -97,6 +111,7 @@ const settingSchema = new mongoose.Schema({
     
     withdraw: {
       providerType: { type: String, enum: ['sitranfer', 'manual', 'none'], default: 'sitranfer' },
+      rule: { type: String, enum: ['free', 'all'], default: 'free' },
       autoWdLimit: { type: Number, default: 50 }, // in points (default: 50pt = Rp50.000)
       minWithdraw: { type: Number, default: 20 }, // in points
       maxWithdraw: { type: Number, default: 10000 }, // in points

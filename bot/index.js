@@ -44,6 +44,20 @@ mongoose.connect(mongoUri)
 bot.use(userMiddleware);
 bot.use(groupMiddleware);
 
+const forceSubMiddleware = require('./middlewares/forceSubMiddleware');
+bot.use(forceSubMiddleware);
+
+// Action handler for checking sub
+bot.action('check_sub', async (ctx) => {
+  try {
+    // If it reaches this block, it means forceSubMiddleware called next() ~ meaning they subbed!
+    await ctx.answerCbQuery('✅ Terimakasih! Akses Bot berhasil dibuka.');
+    await ctx.editMessageText('✅ Terima kasih sudah berlangganan channel resmi kami!\n\nKetik /start atau klik tombol kiri bawah untuk mulai bermain.');
+  } catch (e) {
+    console.error('Error in check_sub:', e.message);
+  }
+});
+
 // Track if bot is kicked/added to groups
 bot.on('my_chat_member', async (ctx) => {
   if (ctx.chat.type.includes('group')) {

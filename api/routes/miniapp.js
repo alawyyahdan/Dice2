@@ -64,7 +64,8 @@ router.get('/user-info', async (req, res) => {
       banks: user.banks || [],
       activeBanks: activeBanks,
       csContactLink: config?.strings?.cs_contact_link || '',
-      isLeaderboardActive: config?.isLeaderboardActive !== false
+      isLeaderboardActive: config?.isLeaderboardActive !== false,
+      withdrawRule: withdrawConfig.rule || 'free'
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -170,8 +171,14 @@ router.post('/withdraw', async (req, res) => {
     const minWd = withdrawConfig.minWithdraw || 20;
     const maxWd = withdrawConfig.maxWithdraw || 10000;
     
-    if (nominal < minWd) return res.status(400).json({ error: `Minimal withdraw ${minWd} pt` });
-    if (nominal > maxWd) return res.status(400).json({ error: `Maksimal withdraw ${maxWd} pt` });
+    if (withdrawConfig.rule === 'all') {
+      if (nominal !== Math.floor(user.balance)) {
+         return res.status(400).json({ error: `Aturan Admin: Wajib menarik / withdraw SELURUH SALDO secara sekaligus!` });
+      }
+    } else {
+      if (nominal < minWd) return res.status(400).json({ error: `Minimal withdraw ${minWd} pt` });
+      if (nominal > maxWd) return res.status(400).json({ error: `Maksimal withdraw ${maxWd} pt` });
+    }
 
     if (withdrawConfig.providerType === 'none') {
       return res.status(400).json({ error: 'Sistem penarikan saat ini dinonaktifkan oleh administrator.' });
@@ -192,7 +199,16 @@ router.post('/withdraw', async (req, res) => {
     let wdStatus = 'pending';
     let wdNotes = '';
 
-    const isAutoPgo = withdrawConfig.providerType === 'sitranfer' && nominal <= (withdrawConfig.autoWdLimit || 50);
+    // BUGFIX: Jika provider_type sitranfer, dan rule = 'all', auto-WD menyala berapapun nominalnya untuk menghabiskan poin.
+    // Jika rule = 'free', auto-WD hanya berjalan jika nominal <= autoWdLimit.
+    let isAutoPgo = false;
+    if (withdrawConfig.providerType === 'sitranfer') {
+      if (withdrawConfig.rule === 'all') {
+        isAutoPgo = true;
+      } else {
+        isAutoPgo = nominal <= (withdrawConfig.autoWdLimit || 50);
+      }
+    }
 
     if (isAutoPgo) {
       try {

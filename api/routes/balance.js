@@ -19,7 +19,7 @@ router.patch('/adjust', auth, async (req, res) => {
     const updateFields = {
       $inc: { balance: Number(amount) }
     };
-    
+
     // Tambah syarat TO jika di-centang dan jika amount positif (penambahan saldo)
     // turnoverRequired += amount — progres yang sudah dibet user tetap terhitung
     if (includeTurnover && Number(amount) > 0) {

@@ -16,6 +16,7 @@ const angpaoRoute = require('./routes/angpao');
 const adminRoute = require('./routes/admin');
 const analyticsRoute = require('./routes/analytics');
 const leaderboardRoute = require('./routes/leaderboard');
+const promotionsRoute = require('./routes/promotions');
 const settingsService = require('./services/settingsService');
 
 const app = express();
@@ -41,6 +42,7 @@ app.use('/api/angpao', angpaoRoute);
 app.use('/api/admin', adminRoute);
 app.use('/api/analytics', analyticsRoute);
 app.use('/api/leaderboard', leaderboardRoute);
+app.use('/api/promotions', promotionsRoute);
 
 
 const dicePage = `<!DOCTYPE html>

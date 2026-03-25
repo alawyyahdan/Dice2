@@ -143,4 +143,9 @@ export const api = {
   getGroupStats: (id) =>
     apiFetch(`/api/admin/groups/${id}/stats`),
 
+  getPromotions: () => apiFetch('/api/promotions'),
+  createPromotion: (data) => apiFetch('/api/promotions', { method: 'POST', body: JSON.stringify(data) }),
+  updatePromotion: (id, data) => apiFetch(`/api/promotions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deletePromotion: (id) => apiFetch(`/api/promotions/${id}`, { method: 'DELETE' }),
+
 };

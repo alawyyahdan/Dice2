@@ -49,11 +49,13 @@ router.get('/methods', async (req, res) => {
     
     if (provType === 'manual') {
        const methods = config.paymentGateway.manual?.methods?.filter(m => m.isActive) || [];
+       const promos = config.paymentGateway.depositPromos?.filter(p => p.isActive) || [];
        return res.json({ 
          providerType: 'manual', 
          minDeposit: minDepo / 1000,
          maxDeposit: maxDepo / 1000,
          methods,
+         promos,
          warningText: config.paymentGateway.manual?.warningText || ''
        });
     }
@@ -62,12 +64,14 @@ router.get('/methods', async (req, res) => {
     const activeMethods = (config.paymentGateway.sitranfer?.methods || []).filter(m => m.isActive).map(m => ({
       code: m.code, name: m.name, logoUrl: m.logoUrl
     }));
+    const promos = config.paymentGateway.depositPromos?.filter(p => p.isActive) || [];
     
     res.json({ 
       providerType: 'sitranfer', 
       minDeposit: minDepo / 1000,
       maxDeposit: maxDepo / 1000,
       methods: activeMethods,
+      promos,
       warningText: config.paymentGateway.sitranfer?.warningText
     });
   } catch (err) {
@@ -78,7 +82,7 @@ router.get('/methods', async (req, res) => {
 // 1. POST /api/deposit/create - Dari MiniApp
 router.post('/create', async (req, res) => {
   try {
-    const { initData, telegramId, amount, paymentMethod } = req.body;
+    const { initData, telegramId, amount, paymentMethod, promoId } = req.body;
     
     if (!verifyTelegramInitData(initData)) return res.status(403).json({ error: 'Invalid Telegram data' });
     if (!amount) return res.status(400).json({ error: 'Isi nominal deposit' });
@@ -133,6 +137,18 @@ router.post('/create', async (req, res) => {
         };
       }
 
+      // CALCULATE PROMO
+      let appliedPromo = null;
+      let bonusApplied = 0;
+      let turnoverApplied = 0;
+      if (promoId) {
+        appliedPromo = config.paymentGateway?.depositPromos?.find(p => p.id === promoId && p.isActive);
+        if (appliedPromo) {
+          bonusApplied = appliedPromo.type === 'percent' ? Math.floor(amount * (appliedPromo.bonusValue / 100)) : appliedPromo.bonusValue;
+          turnoverApplied = Math.floor((amount + bonusApplied) * (appliedPromo.turnoverMultiplier || 0));
+        }
+      }
+
       const deposit = await Deposit.create({
         userId: user._id, 
         telegramId, 
@@ -140,7 +156,11 @@ router.post('/create', async (req, res) => {
         paymentMethod: paymentMethod, 
         referenceId, 
         paymentData: JSON.stringify(bankInfo), 
-        status: 'pending'
+        status: 'pending',
+        promoId: appliedPromo ? appliedPromo.id : undefined,
+        promoName: appliedPromo ? appliedPromo.name : undefined,
+        bonusApplied,
+        turnoverApplied
       });
 
       // NOTIFIKASI TELEGRAM ADMIN JIKA MODE MANUAL
@@ -178,6 +198,18 @@ router.post('/create', async (req, res) => {
       // Panggil SiTranfer menggunakan Nominal Rupiah Asli (amount * 1000)
       const result = await paymentService.generateDeposit(paymentMethod, idrAmount, user.username);
       
+      // CALCULATE PROMO
+      let appliedPromo = null;
+      let bonusApplied = 0;
+      let turnoverApplied = 0;
+      if (promoId) {
+        appliedPromo = config.paymentGateway?.depositPromos?.find(p => p.id === promoId && p.isActive);
+        if (appliedPromo) {
+          bonusApplied = appliedPromo.type === 'percent' ? Math.floor(amount * (appliedPromo.bonusValue / 100)) : appliedPromo.bonusValue;
+          turnoverApplied = Math.floor((amount + bonusApplied) * (appliedPromo.turnoverMultiplier || 0));
+        }
+      }
+
       const deposit = await Deposit.create({
         userId: user._id,
         telegramId,
@@ -186,7 +218,11 @@ router.post('/create', async (req, res) => {
         referenceId,
         transactionId: result.transaction_id,
         paymentData: result.qris_image || result.payment_url || result.qris_data,
-        status: 'pending'
+        status: 'pending',
+        promoId: appliedPromo ? appliedPromo.id : undefined,
+        promoName: appliedPromo ? appliedPromo.name : undefined,
+        bonusApplied,
+        turnoverApplied
       });
 
       res.json({ message: 'Tagihan dibuat', data: deposit });
@@ -426,10 +462,13 @@ router.post('/action', require('../middlewares/authMiddleware'), async (req, res
 
     if (action === 'success') {
       const nominal = dep.amount;
+      const topupTotal = nominal + (dep.bonusApplied || 0);
+      const finalTOInc = dep.promoId ? (dep.turnoverApplied || 0) : nominal;
+
       await User.findByIdAndUpdate(
         dep.userId,
         {
-          $inc: { balance: nominal, totalDeposit: nominal, turnoverRequired: nominal }
+          $inc: { balance: topupTotal, totalDeposit: nominal, turnoverRequired: finalTOInc }
         }
       );
       const settings = await Setting.findOne();

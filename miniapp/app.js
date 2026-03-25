@@ -27,8 +27,64 @@ function switchTab(tabId) {
   if (tabId === 'history') loadHistory();
   if (tabId === 'deposit') loadDepoHistory();
   if (tabId === 'withdraw') loadWdHistory();
+  if (tabId === 'promosi') loadPromosi();
   if (tabId === 'guide') loadGuide();
   if (tabId === 'leaderboard') loadLeaderboard('daily');
+}
+
+async function loadPromosi() {
+  const listContainer = document.getElementById('promosi-list');
+  const detailContainer = document.getElementById('promosi-detail');
+  listContainer.style.display = 'flex';
+  detailContainer.style.display = 'none';
+  
+  try {
+    const res = await fetch(`${API_URL}/api/promotions/active`);
+    const data = await res.json();
+    if (!data.promotions || data.promotions.length === 0) {
+      listContainer.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-weight:bold;">Belum ada promosi aktif saat ini.</div>';
+      return;
+    }
+
+    listContainer.innerHTML = data.promotions.map(promo => {
+      // Encode promo data into a safe string to click
+      const safePromo = encodeURIComponent(JSON.stringify(promo));
+      return `
+        <div class="card-dark" style="padding:0; overflow:hidden; cursor:pointer; transition:transform 0.2s; border:1px solid var(--border);" onclick="showPromosiDetail('${safePromo}')">
+          <img src="${promo.bannerUrl}" style="width:100%; height:160px; object-fit:cover; display:block;" onerror="this.src='https://via.placeholder.com/400x160?text=Banner'">
+          <div style="padding:16px;">
+            <h3 style="margin:0; font-size:1.1rem; color:#fff; font-weight:bold; margin-bottom:6px;">${promo.title}</h3>
+            <div style="font-size:0.8rem; color:var(--text-muted);">🗓️ Berlaku s.d. ${new Date(promo.endDate).toLocaleString('id-ID')}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    listContainer.innerHTML = '<span style="color:var(--danger)">Gagal memuat promosi.</span>';
+  }
+}
+
+function showPromosiDetail(encodedPromo) {
+  const promo = JSON.parse(decodeURIComponent(encodedPromo));
+  const listContainer = document.getElementById('promosi-list');
+  const detailContainer = document.getElementById('promosi-detail');
+  
+  listContainer.style.display = 'none';
+  detailContainer.style.display = 'flex';
+  
+  detailContainer.innerHTML = `
+    <button onclick="document.getElementById('promosi-list').style.display='flex'; document.getElementById('promosi-detail').style.display='none';" class="btn" style="background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border); padding:8px 16px; font-weight:bold; width:max-content; border-radius:30px; margin-bottom:10px;">
+      ← KEMBALI
+    </button>
+    <img src="${promo.bannerUrl}" style="width:100%; height:auto; border-radius:12px; border:2px solid var(--border);" onerror="this.src='https://via.placeholder.com/400x160?text=Banner'">
+    <h2 style="font-size:1.4rem; color:#fff; font-weight:900; line-height:1.3; margin-top:8px;">${promo.title}</h2>
+    <div style="font-size:0.85rem; color:var(--text-muted); background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; display:inline-block;">
+      ⏳ Promo s.d. <strong style="color:var(--warning)">${new Date(promo.endDate).toLocaleString('id-ID')}</strong>
+    </div>
+    <div style="color:var(--text); line-height:1.6; font-size:0.95rem; margin-top:10px;">
+      ${promo.description}
+    </div>
+  `;
 }
 
 async function loadGuide() {
@@ -169,6 +225,44 @@ async function loadPaymentMethods() {
             </label>
           `;
       });
+      
+      const promoGroup = document.getElementById('group-depo-promo');
+      const promoInput = document.getElementById('depo-promo');
+      const promoContainer = document.getElementById('promo-options-container');
+      
+      if (data.promos && data.promos.length > 0) {
+        if(promoGroup) promoGroup.style.display = 'block';
+        if(promoContainer) {
+          let promoHTML = `
+            <label style="display:block; margin:0; padding:0;">
+               <input class="promo-radio method-radio" type="radio" name="depo_promo_sel" value="" checked style="display:none;" onchange="document.getElementById('depo-promo').value = this.value;">
+               <div class="method-card" style="justify-content:flex-start;">
+                 <span>🎁 Tidak Pakai Promo</span>
+               </div>
+            </label>
+          `;
+          data.promos.forEach(p => {
+            const title = p.type === 'percent' ? `Bonus ${p.bonusValue}%` : `Bonus ${p.bonusValue}pt`;
+            promoHTML += `
+              <label style="display:block; margin:0; padding:0;">
+                 <input class="promo-radio method-radio" type="radio" name="depo_promo_sel" value="${p.id}" style="display:none;" onchange="document.getElementById('depo-promo').value = this.value;">
+                 <div class="method-card" style="justify-content:flex-start; gap:12px;">
+                   <span>🏷️</span>
+                   <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                     <span style="font-size:0.95rem;">${p.name}</span>
+                     <span style="font-size:0.75rem; color:var(--success); opacity:0.9;">${title} / TO x${p.turnoverMultiplier}</span>
+                   </div>
+                 </div>
+              </label>
+            `;
+          });
+          promoContainer.innerHTML = promoHTML;
+        }
+        if(promoInput) promoInput.value = "";
+      } else {
+        if(promoGroup) promoGroup.style.display = 'none';
+        if(promoInput) promoInput.value = "";
+      }
     }
   } catch (err) {
     console.error('Failed to load payment methods:', err);
@@ -196,6 +290,7 @@ function renderUI() {
   // Toggle form WD if TO is met
   const wdWarning = document.getElementById('wd-warning');
   const wdSection = document.getElementById('wd-section');
+  const wdAmountInput = document.getElementById('wd-amount');
 
   if (!userInfo.turnoverMet) {
     wdWarning.style.display = 'block';
@@ -204,6 +299,28 @@ function renderUI() {
   } else {
     wdWarning.style.display = 'none';
     wdSection.style.display = 'block';
+    
+    if (userInfo.withdrawRule === 'all') {
+       if (wdAmountInput) {
+         wdAmountInput.value = Math.floor(userInfo.balance);
+         wdAmountInput.readOnly = true;
+         wdAmountInput.style.opacity = '0.7';
+         wdAmountInput.title = "Aturan sistem mewajibkan penarikan seluruh saldo sekaligus.";
+         const lbl = wdAmountInput.previousElementSibling;
+         if (lbl) lbl.innerHTML = `Jumlah Withdraw Poin <span style="opacity:0.8;font-size:0.8rem;color:var(--warning);">(Wajib Tarik Semua)</span>`;
+         if (window.updateIdrLive) window.updateIdrLive();
+       }
+    } else {
+       if (wdAmountInput) {
+         wdAmountInput.readOnly = false;
+         wdAmountInput.style.opacity = '1';
+         wdAmountInput.title = "";
+         const lbl = wdAmountInput.previousElementSibling;
+         if (lbl) lbl.innerHTML = `Jumlah Withdraw Poin <span style="opacity:0.7;font-size:0.8rem;">(1pt = Rp1.000)</span>`;
+         if (window.updateIdrLive) window.updateIdrLive();
+       }
+    }
+
     renderBanks();
   }
 }
@@ -318,6 +435,21 @@ async function addBankAccount() {
   }
 }
 
+window.updateIdrLive = function() {
+  const wdAmountInput = document.getElementById('wd-amount');
+  const wdLiveText = document.getElementById('wd-idr-live');
+  
+  if (!wdAmountInput || !wdLiveText) return;
+  
+  const val = parseInt(wdAmountInput.value) || 0;
+  if (val > 0) {
+    wdLiveText.style.display = 'block';
+    wdLiveText.innerText = '~ Rp ' + (val * 1000).toLocaleString('id-ID');
+  } else {
+    wdLiveText.style.display = 'none';
+  }
+};
+
 async function submitWithdraw() {
   const amount = parseInt(document.getElementById('wd-amount').value);
   if (selectedBankIndex < 0) return alert('Pilih rekening tujuan!');
@@ -365,6 +497,9 @@ async function submitDeposit() {
     return showError('depo-method-err', 'Pilih metode pembayaran!');
   }
 
+  const promoSelect = document.getElementById('depo-promo');
+  const promoId = promoSelect && promoSelect.value !== "" ? promoSelect.value : undefined;
+
   const btn = document.getElementById('btn-submit-depo');
   btn.innerText = 'MEMPROSES...'; btn.disabled = true;
 
@@ -372,7 +507,7 @@ async function submitDeposit() {
     const res = await fetch(`${API_URL}/api/deposit/create`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        initData: currentInitData, telegramId: String(currentUser.id), amount, paymentMethod: method
+        initData: currentInitData, telegramId: String(currentUser.id), amount, paymentMethod: method, promoId
       })
     });
     const data = await res.json();

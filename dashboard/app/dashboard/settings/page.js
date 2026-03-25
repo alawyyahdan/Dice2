@@ -35,6 +35,7 @@ export default function SettingsPage() {
 
   // Maintenance State
   const [maintenanceStats, setMaintenanceStats] = useState({ dbUsed: 0, dbMax: 512, cacheSize: 0 });
+  const [formForceSub, setFormForceSub] = useState({ isActive: false, channelUsername: '', channelLink: '' });
   const [resetDbSelection, setResetDbSelection] = useState({
     bets: false,
     deposits: false,
@@ -153,6 +154,7 @@ export default function SettingsPage() {
       setIsBotActive(data.isBotActive !== false);
       setIsGroupActive(data.isGroupActive !== false);
       setIsLeaderboardActive(data.isLeaderboardActive !== false);
+      setFormForceSub(data.forceSub || { isActive: false, channelUsername: '', channelLink: '' });
 
       const profile = await api.getAdminProfile();
       setAdminProfile(profile);
@@ -171,7 +173,7 @@ export default function SettingsPage() {
       if (sectionKey === 'bounds') payload = { bounds: formBounds };
       if (sectionKey === 'strings') payload = { strings: formStrings };
       if (sectionKey === 'general') payload = { minBet, roundDuration };
-      if (sectionKey === 'bot_status') payload = { isBotActive, isGroupActive, isLeaderboardActive };
+      if (sectionKey === 'bot_status') payload = { isBotActive, isGroupActive, isLeaderboardActive, forceSub: formForceSub };
       if (sectionKey === 'payment') payload = { paymentGateway: formPayment };
 
       await api.updateSettings(payload);
@@ -752,6 +754,113 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {/* PROMOSI DEPOSIT */}
+          <div className="animate-in fade-in duration-300 mt-10">
+            <h3 className="text-lg font-bold text-white mb-4">Daftar Promo Deposit Aktif</h3>
+            <p className="text-xs text-slate-400 mb-6">User dapat memilih promo bonus ini saat form checkout deposit di MiniApp. (Nilai turnover = (Deposit + Bonus) * Syarat TO).</p>
+            <hr className="border-slate-800 mb-6" />
+            
+            <div className="space-y-4">
+              {(formPayment.depositPromos || []).map((promo, idx) => (
+                <div key={idx} className="flex flex-col md:flex-row flex-wrap items-center gap-4 bg-[#161d2d] p-5 rounded-xl border border-slate-800 relative group">
+                  <button 
+                      onClick={() => {
+                        const newPromos = formPayment.depositPromos.filter((_, i) => i !== idx);
+                        setFormPayment({ ...formPayment, depositPromos: newPromos });
+                      }}
+                      className="absolute right-3 top-3 p-1.5 text-slate-500 border border-slate-700 rounded-md hover:bg-rose-500/20 hover:text-rose-400 transition-colors"
+                      title="Hapus Promo"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                  </button>
+
+                  <div className="flex-1 w-full min-w-[150px] mt-2 md:mt-0">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">NAMA PROMO</label>
+                    <input 
+                      type="text" 
+                      value={promo.name || ''}
+                      onChange={(e) => {
+                        const newPromos = [...(formPayment.depositPromos || [])];
+                        newPromos[idx].name = e.target.value;
+                        setFormPayment({ ...formPayment, depositPromos: newPromos });
+                      }}
+                      className="w-full bg-[#0d1117] border border-slate-700 rounded-md py-2 px-3 text-slate-200 font-bold text-sm outline-none"
+                    />
+                  </div>
+                  <div className="w-full md:w-32">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">TIPE BONUS</label>
+                    <select 
+                      value={promo.type || 'percent'}
+                      onChange={(e) => {
+                        const newPromos = [...(formPayment.depositPromos || [])];
+                        newPromos[idx].type = e.target.value;
+                        setFormPayment({ ...formPayment, depositPromos: newPromos });
+                      }}
+                      className="w-full bg-[#0d1117] border border-slate-700 rounded-md py-2 px-3 text-slate-200 text-sm outline-none"
+                    >
+                      <option value="percent">Persen (%)</option>
+                      <option value="fixed">Fix (Poin)</option>
+                    </select>
+                  </div>
+                  <div className="w-full md:w-32">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">NILAI BONUS</label>
+                    <input 
+                      type="number" 
+                      value={promo.bonusValue || 0}
+                      onChange={(e) => {
+                        const newPromos = [...(formPayment.depositPromos || [])];
+                        newPromos[idx].bonusValue = parseFloat(e.target.value) || 0;
+                        setFormPayment({ ...formPayment, depositPromos: newPromos });
+                      }}
+                      className="w-full bg-[#0d1117] border border-slate-700 rounded-md py-2 px-3 text-emerald-400 font-bold text-sm outline-none"
+                    />
+                  </div>
+                  <div className="w-full md:w-32">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">SYARAT TURN OVER</label>
+                    <input 
+                      type="number" 
+                      step="0.1"
+                      value={promo.turnoverMultiplier || 0}
+                      onChange={(e) => {
+                        const newPromos = [...(formPayment.depositPromos || [])];
+                        newPromos[idx].turnoverMultiplier = parseFloat(e.target.value) || 0;
+                        setFormPayment({ ...formPayment, depositPromos: newPromos });
+                      }}
+                      className="w-full bg-[#0d1117] border border-slate-700 rounded-md py-2 px-3 text-amber-400 font-bold text-sm outline-none"
+                      placeholder="e.g. 1.0, 3.5, 5.0"
+                    />
+                  </div>
+                  <div className="flex flex-col w-full md:w-24 mt-2 md:mt-0 pt-0">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block text-center md:text-left">STATUS</label>
+                    <button 
+                      onClick={() => {
+                        const newPromos = [...(formPayment.depositPromos || [])];
+                        newPromos[idx].isActive = !newPromos[idx].isActive;
+                        setFormPayment({ ...formPayment, depositPromos: newPromos });
+                      }}
+                      className={`w-full py-2 rounded-md font-bold text-xs transition-colors border ${promo.isActive ? 'bg-[#0f291e] text-[#10b981] border-[#10b981]/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}
+                    >
+                      {promo.isActive ? 'AKTIF' : 'MATI'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+              
+              <button 
+                onClick={() => {
+                  const existing = Array.isArray(formPayment.depositPromos) ? formPayment.depositPromos : [];
+                  setFormPayment({
+                    ...formPayment, 
+                    depositPromos: [...existing, { id: `PRM-${Date.now()}`, name: '', type: 'percent', bonusValue: 10, turnoverMultiplier: 1, isActive: true }]
+                  });
+                }}
+                className="w-full py-4 rounded-xl border border-dashed border-slate-600 text-slate-400 hover:border-slate-500 hover:text-slate-300 transition-all text-sm font-bold mt-2 bg-transparent uppercase tracking-wider"
+              >
+                + BIKIN PROMO DEPOSIT BARU
+              </button>
+            </div>
+          </div>
+
           <div className="mt-8 pt-6 border-t border-slate-800 flex justify-end">
             <button disabled={saving} onClick={() => handleSave('payment')} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50">
               {saving ? '⏳ Menyimpan...' : 'Simpan Konfigurasi'}
@@ -785,8 +894,20 @@ export default function SettingsPage() {
                  <input type="radio" className="w-4 h-4 accent-cyan-500" checked={formPayment.withdraw?.providerType === 'none'} onChange={() => setFormPayment({...formPayment, withdraw: {...(formPayment.withdraw||{}), providerType: 'none'}})}/>
                  <span className="font-semibold text-sm text-slate-200">Matikan Withdraw</span>
                </label>
-             </div>
-          </div>
+              </div>
+           </div>
+
+           <div className="mb-8 p-6 rounded-xl border border-slate-800 bg-[#161d2d]">
+              <label className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-2 block">ATURAN PENARIKAN (RULE)</label>
+              <select 
+                value={formPayment.withdraw?.rule || 'free'} 
+                onChange={e => setFormPayment({...formPayment, withdraw: {...(formPayment.withdraw||{}), rule: e.target.value}})}
+                className="w-full bg-[#0b0f19] border border-slate-700 rounded-lg py-3 px-4 text-white focus:border-cyan-500 outline-none"
+              >
+                <option value="free">Bebas Menarik Nominal Berapapun (Minimal diatas batas minimal WD)</option>
+                <option value="all">Wajib Tarik Semua Saldo Poin Sekaligus Secara Otomatis</option>
+              </select>
+           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-6 rounded-xl border border-slate-800 bg-[#161d2d]">
             <div>
@@ -1121,6 +1242,47 @@ export default function SettingsPage() {
                       <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all ${isLeaderboardActive ? 'left-8' : 'left-1'}`} />
                     </button>
                   </div>
+                </div>
+
+                {/* FORCE SUB SWITCH */}
+                <div className={`p-5 rounded-2xl border transition-all duration-300 ${formForceSub.isActive ? 'bg-indigo-500/5 border-indigo-500/20' : 'bg-slate-700/20 border-slate-700/50'}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <div className="font-black text-white text-lg">Force Sub Channel</div>
+                      <div className="text-xs text-slate-500">Wajibkan user join channel tele</div>
+                    </div>
+                    <button 
+                      onClick={() => setFormForceSub({...formForceSub, isActive: !formForceSub.isActive})}
+                      className={`w-14 h-7 rounded-full transition-all relative ${formForceSub.isActive ? 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'bg-slate-700'}`}
+                    >
+                      <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all ${formForceSub.isActive ? 'left-8' : 'left-1'}`} />
+                    </button>
+                  </div>
+                  
+                  {formForceSub.isActive && (
+                    <div className="mt-4 space-y-3 pt-3 border-t border-slate-700/50 animate-in fade-in slide-in-from-top-2">
+                      <div>
+                        <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1.5 block">Username Channel (Bot harus Admin)</label>
+                        <input 
+                          type="text" 
+                          value={formForceSub.channelUsername}
+                          onChange={(e) => setFormForceSub({...formForceSub, channelUsername: e.target.value})}
+                          placeholder="@NamaChannel"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white text-sm outline-none focus:border-indigo-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1.5 block">Link Invite Channel</label>
+                        <input 
+                          type="text" 
+                          value={formForceSub.channelLink}
+                          onChange={(e) => setFormForceSub({...formForceSub, channelLink: e.target.value})}
+                          placeholder="https://t.me/NamaChannel"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white text-sm outline-none focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

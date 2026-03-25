@@ -39,9 +39,9 @@
       <button class="tab-btn active" onclick="switchTab('withdraw')">💸 WD</button>
       <button class="tab-btn" onclick="switchTab('deposit')">➕ Depo</button>
       <button class="tab-btn" onclick="switchTab('history')">🎲 Riwayat</button>
+      <button class="tab-btn" onclick="switchTab('promosi')">🎁 Promosi</button>
       <button class="tab-btn" onclick="switchTab('guide')">📖 Aturan</button>
-      <button id="nav-leaderboard" class="tab-btn" onclick="switchTab('leaderboard')" style="display:none;">🏆
-        Leaderboard</button>
+      <button id="nav-leaderboard" class="tab-btn" onclick="switchTab('leaderboard')" style="display:none;">🏆 Leaderboard</button>
     </div>
 
     <!-- TAB: WITHDRAW -->
@@ -92,7 +92,8 @@
           <div class="form-group">
             <label>Jumlah Withdraw Poin <span style="opacity:0.7;font-size:0.8rem;">(1pt = Rp1.000)</span></label>
             <input type="tel" id="wd-amount" placeholder="Minimal: 20 pt" min="20"
-              oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+              oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(window.updateIdrLive) window.updateIdrLive();" />
+            <div id="wd-idr-live" style="font-size: 0.85rem; color: var(--success); margin-top: 6px; font-weight: bold; display:none;">~ Rp 0</div>
             <div class="error-msg" id="wd-amount-err"></div>
           </div>
           <button class="btn btn-primary" onclick="submitWithdraw()" id="btn-submit-wd">AJUKAN PENARIKAN</button>
@@ -154,6 +155,12 @@
             <input type="tel" id="depo-amount" placeholder="Contoh: 50" min="10"
               oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
             <div class="error-msg" id="depo-amount-err"></div>
+          </div>
+
+          <div class="form-group" id="group-depo-promo" style="display: none;">
+            <label>Pilih Promo Deposit (Opsional)</label>
+            <div id="promo-options-container" style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;"></div>
+            <input type="hidden" id="depo-promo" value="">
           </div>
 
           <div class="form-group" id="group-depo-method">
@@ -325,6 +332,15 @@
         <div id="guide-table-container">
           <div class="loading">⏳ Memuat tabel odds dari server...</div>
         </div>
+      </div>
+    </div>
+
+    <!-- TAB: PROMOSI -->
+    <div id="tab-promosi" class="tab-content">
+      <div id="promosi-list" style="display:flex; flex-direction:column; gap:16px;">
+        <div class="loading">Memuat daftar promosi...</div>
+      </div>
+      <div id="promosi-detail" style="display:none; flex-direction:column; gap:16px; background:var(--card); padding:16px; border-radius:12px; border:1px solid var(--border);">
       </div>
     </div>
 
