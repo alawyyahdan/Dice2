@@ -86,6 +86,16 @@ async function handleUserDiceRoll(ctx, telegramId, value) {
   if (ctx.chat.id !== session.chatId) return;
   if (session.processing) return;
 
+  // Cooldown 2 detik antar roll
+  const now = Date.now();
+  if (session.lastRollTime && (now - session.lastRollTime) < 2000) {
+    const sisaMs = 2000 - (now - session.lastRollTime);
+    const sisaDtk = Math.ceil(sisaMs / 1000);
+    await ctx.reply(`⏳ *Anda terlalu cepat!* Harap tunggu ${sisaDtk} detik lagi sebelum roll berikutnya.`, { parse_mode: 'Markdown' });
+    return;
+  }
+  session.lastRollTime = now;
+
   session.processing = true;
   session.collected.push(value);
   const count = session.collected.length;
