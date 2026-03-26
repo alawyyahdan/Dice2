@@ -35,7 +35,7 @@ export default function SettingsPage() {
 
   // Maintenance State
   const [maintenanceStats, setMaintenanceStats] = useState({ dbUsed: 0, dbMax: 512, cacheSize: 0 });
-  const [formForceSub, setFormForceSub] = useState({ isActive: false, channelUsername: '', channelLink: '' });
+  const [formForceSub, setFormForceSub] = useState({ isActive: false, channelUsername: '', channelUrl: '' });
   const [resetDbSelection, setResetDbSelection] = useState({
     bets: false,
     deposits: false,
@@ -107,6 +107,11 @@ export default function SettingsPage() {
     maintenance_msg: 'Pesan Sedang Maintenance',
     group_link: 'Link Grup Telegram (URL t.me)',
     cs_contact_link: 'Link / Username CS (misal: @AdminCS atau https://t.me/...)',
+    forceSub_block: '[Force Sub] Pesan Blokir (saat belum join)',
+    forceSub_btn_join: '[Force Sub] Teks Tombol JOIN CHANNEL',
+    forceSub_btn_check: '[Force Sub] Teks Tombol SAYA SUDAH JOIN',
+    forceSub_success: '[Force Sub] Pesan SUKSES setelah berhasil join',
+    forceSub_not_joined_alert: '[Force Sub] Alert Pop-up Belum Join',
   };
 
   useEffect(() => {
@@ -154,7 +159,7 @@ export default function SettingsPage() {
       setIsBotActive(data.isBotActive !== false);
       setIsGroupActive(data.isGroupActive !== false);
       setIsLeaderboardActive(data.isLeaderboardActive !== false);
-      setFormForceSub(data.forceSub || { isActive: false, channelUsername: '', channelLink: '' });
+      setFormForceSub(data.forceSub || { isActive: false, channelUsername: '', channelUrl: '' });
 
       const profile = await api.getAdminProfile();
       setAdminProfile(profile);
@@ -1275,8 +1280,8 @@ export default function SettingsPage() {
                         <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1.5 block">Link Invite Channel</label>
                         <input 
                           type="text" 
-                          value={formForceSub.channelLink}
-                          onChange={(e) => setFormForceSub({...formForceSub, channelLink: e.target.value})}
+                          value={formForceSub.channelUrl}
+                          onChange={(e) => setFormForceSub({...formForceSub, channelUrl: e.target.value})}
                           placeholder="https://t.me/NamaChannel"
                           className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white text-sm outline-none focus:border-indigo-500"
                         />

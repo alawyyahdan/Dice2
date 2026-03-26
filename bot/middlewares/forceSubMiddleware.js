@@ -18,7 +18,7 @@ const forceSubMiddleware = async (ctx, next) => {
     }
 
     const channelUsername = settings.forceSub.channelUsername; // e.g. '@MyChannel'
-    const channelLink = settings.forceSub.channelLink; // e.g. 'https://t.me/MyChannel'
+    const channelLink = settings.forceSub.channelUrl; // e.g. 'https://t.me/MyChannel'
     
     if (!channelUsername) return next();
 
@@ -31,12 +31,14 @@ const forceSubMiddleware = async (ctx, next) => {
       return next();
     } else {
       // Not subscribed, block interaction and show force sub message
-      const text = `⚠️ <b>Akses Ditolak!</b>\n\nUntuk menggunakan Bot ini dan bermain, kamu <b>WAJIB</b> berlangganan / join ke Channel Info Resmi kami terlebih dahulu.\n\nSilakan join melalui tombol di bawah, lalu klik <b>✅ SAYA SUDAH JOIN</b>.`;
+      const text = settings.strings?.forceSub_block || `⚠️ <b>Akses Ditolak!</b>\n\nUntuk menggunakan Bot ini dan bermain, kamu <b>WAJIB</b> berlangganan / join ke Channel Info Resmi kami terlebih dahulu.\n\nSilakan join melalui tombol di bawah, lalu klik <b>✅ SAYA SUDAH JOIN</b>.`;
+      const btnJoin = settings.strings?.forceSub_btn_join || '📢 JOIN CHANNEL OFFICIAL';
+      const btnCheck = settings.strings?.forceSub_btn_check || '✅ SAYA SUDAH JOIN';
       
       const keyboard = {
         inline_keyboard: [
-          [{ text: '📢 JOIN CHANNEL OFFICIAL', url: channelLink || `https://t.me/${channelUsername.replace('@', '')}` }],
-          [{ text: '✅ SAYA SUDAH JOIN', callback_data: 'check_sub' }]
+          [{ text: btnJoin, url: channelLink || `https://t.me/${channelUsername.replace('@', '')}` }],
+          [{ text: btnCheck, callback_data: 'check_sub' }]
         ]
       };
 

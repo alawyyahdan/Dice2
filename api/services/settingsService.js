@@ -54,6 +54,13 @@ class SettingsService {
       if (newData.isLeaderboardActive !== undefined) {
         config.isLeaderboardActive = newData.isLeaderboardActive;
       }
+      if (newData.forceSub !== undefined) {
+        config.forceSub = {
+          isActive: newData.forceSub.isActive === true,
+          channelUsername: newData.forceSub.channelUsername || '',
+          channelUrl: newData.forceSub.channelLink || newData.forceSub.channelUrl || ''
+        };
+      }
       
       config.updatedAt = Date.now();
       await config.save();

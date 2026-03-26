@@ -50,11 +50,50 @@ bot.use(forceSubMiddleware);
 // Action handler for checking sub
 bot.action('check_sub', async (ctx) => {
   try {
-    // If it reaches this block, it means forceSubMiddleware called next() ~ meaning they subbed!
-    await ctx.answerCbQuery('✅ Terimakasih! Akses Bot berhasil dibuka.');
-    await ctx.editMessageText('✅ Terima kasih sudah berlangganan channel resmi kami!\n\nKetik /start atau klik tombol kiri bawah untuk mulai bermain.');
+    const Setting = require('../api/models/Setting');
+    const settings = await Setting.findOne();
+    
+    if (!settings?.forceSub?.isActive || !settings.forceSub.channelUsername) {
+      await ctx.answerCbQuery('✅ Akses terbuka!');
+      await ctx.editMessageText('✅ Akses Bot berhasil dibuka!\n\nKetik /start untuk mulai bermain.');
+      return;
+    }
+
+    const channelUsername = settings.forceSub.channelUsername;
+    const channelUrl = settings.forceSub.channelUrl;
+    
+    let member;
+    try {
+      member = await ctx.telegram.getChatMember(channelUsername, ctx.from.id);
+    } catch (e) {
+      // Bot is not admin or channel not found
+      await ctx.answerCbQuery('✅ Akses terbuka!');
+      await ctx.editMessageText('✅ Akses Bot berhasil dibuka!\n\nKetik /start untuk mulai bermain.');
+      return;
+    }
+
+    const status = member.status;
+    if (['member', 'administrator', 'creator'].includes(status)) {
+      // SUCCESS - user has joined
+      const successMsg = settings.strings?.forceSub_success || '✅ <b>Terima kasih sudah bergabung!</b>\n\nAkses Bot berhasil dibuka. Ketik /start atau klik tombol untuk mulai bermain.';
+      await ctx.answerCbQuery('✅ Sukses! Akses dibuka.');
+      await ctx.editMessageText(successMsg, { parse_mode: 'HTML' });
+    } else {
+      // User still hasn't joined
+      const blockMsg = settings.strings?.forceSub_block || '⚠️ <b>Akses Ditolak!</b>\n\nKamu <b>belum</b> bergabung ke Channel resmi kami. Silakan join dulu, lalu klik tombol di bawah.';
+      const keyboard = {
+        inline_keyboard: [
+          [{ text: '📢 JOIN CHANNEL OFFICIAL', url: channelUrl || `https://t.me/${channelUsername.replace('@', '')}` }],
+          [{ text: '✅ SAYA SUDAH JOIN', callback_data: 'check_sub' }]
+        ]
+      };
+      const alertMsg = settings.strings?.forceSub_not_joined_alert || '❌ Kamu belum join channel!';
+      await ctx.answerCbQuery(alertMsg, { show_alert: true });
+      await ctx.editMessageText(blockMsg, { parse_mode: 'HTML', reply_markup: keyboard });
+    }
   } catch (e) {
     console.error('Error in check_sub:', e.message);
+    await ctx.answerCbQuery('❌ Terjadi kesalahan. Coba lagi.').catch(() => {});
   }
 });
 

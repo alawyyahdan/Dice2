@@ -177,6 +177,11 @@ const settingSchema = new mongoose.Schema({
     maintenance_msg: { type: String, default: '⚠️ <b>Bot sedang Maintenance</b>\n\nMaaf Bos, saat ini sistem sedang dalam perbaikan untuk meningkatkan layanan. Silakan coba lagi nanti ya!' },
     group_link: { type: String, default: '' },
     cs_contact_link: { type: String, default: '' },
+    forceSub_block: { type: String, default: '⚠️ <b>Akses Ditolak!</b>\n\nUntuk menggunakan Bot ini, kamu <b>WAJIB</b> bergabung ke Channel resmi kami terlebih dahulu.\n\nSilakan join melalui tombol di bawah, lalu klik <b>✅ SAYA SUDAH JOIN</b>.' },
+    forceSub_btn_join: { type: String, default: '📢 JOIN CHANNEL OFFICIAL' },
+    forceSub_btn_check: { type: String, default: '✅ SAYA SUDAH JOIN' },
+    forceSub_success: { type: String, default: '✅ <b>Terima kasih sudah bergabung!</b>\n\nAkses Bot berhasil dibuka. Ketik /start atau klik tombol untuk mulai bermain.' },
+    forceSub_not_joined_alert: { type: String, default: '❌ Kamu belum join channel!' },
   }
 });
 
