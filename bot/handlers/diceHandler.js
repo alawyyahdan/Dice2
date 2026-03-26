@@ -4,7 +4,7 @@ const Bet = require('../../api/models/Bet');
 const crypto = require('crypto');
 const settingsService = require('../../api/services/settingsService');
 
-// Listener in-memory: Map<telegramId, { chatId, collected: [], timeout, processing }>
+// Listener in-memory: Map<telegramId, { chatId, collected: [], timeout, queue: [], processing }>
 const waitingRolls = new Map();
 
 // pendingBets & roundTracker di-inject dari betHandler saat registerDiceHandler dipanggil
@@ -36,7 +36,7 @@ function registerDiceHandler(bot, pendingBets, roundTracker) {
     await processResult(ctx, bet, dice, 'bot');
   });
 
-  // User pilih Roll sendiri → kirim pesan + Reply Keyboard tombol dadu
+  // User pilih Roll sendiri → kirim pesan instruksi, user kirim emoji 🎲 native
   bot.action('roll_user', async (ctx) => {
     await ctx.answerCbQuery();
     const telegramId = String(ctx.from.id);
@@ -47,8 +47,9 @@ function registerDiceHandler(bot, pendingBets, roundTracker) {
     // Remove the inline buttons
     await ctx.editMessageReplyMarkup({ inline_keyboard: [] }).catch(() => {});
 
+    // Kirim instruksi dengan Reply Keyboard tombol 🎲
+    // Bot akan sendDice saat tombol ditekan agar value selalu presisi
     const { rollDiceReplyKeyboard } = require('../utils/keyboard');
-
     await ctx.reply(
       settingsService.getString('roll_user_start'),
       { parse_mode: 'HTML', ...rollDiceReplyKeyboard }
@@ -58,12 +59,9 @@ function registerDiceHandler(bot, pendingBets, roundTracker) {
     const timeout = setTimeout(async () => {
       if (waitingRolls.has(telegramId)) {
         waitingRolls.delete(telegramId);
-        const { removeRollKeyboard } = require('../utils/keyboard');
         try {
-          await ctx.reply(settingsService.getString('roll_timeout'), {
-            parse_mode: 'HTML',
-            ...removeRollKeyboard
-          });
+          const { removeRollKeyboard } = require('../utils/keyboard');
+          await ctx.reply(settingsService.getString('roll_timeout'), { parse_mode: 'HTML', ...removeRollKeyboard });
         } catch (_) {}
       }
     }, 120000);
@@ -72,44 +70,34 @@ function registerDiceHandler(bot, pendingBets, roundTracker) {
       chatId: ctx.chat.id,
       bet,
       collected: [],
+      slotCounter: 0,   // Atomic slot: 3 tersedia, siapa cepat dapat slot
       timeout,
-      processing: false
     });
   });
 }
 
-// Dipanggil dari betHandler saat user kirim emoji dadu 🎲
-// value = ctx.message.dice.value (langsung dari dadu user, tidak perlu sendDice lagi)
+// Dipanggil dari betHandler/dice handler saat user kirim dadu 🎲 atau tap tombol
+// Menggunakan slot atomic: 3 slot tersedia, siapapun yang datang pertama dapat slot 1,2,3
+// Slot ke-4 dan seterusnya langsung diabaikan
 async function handleUserDiceRoll(ctx, telegramId, value) {
   const session = waitingRolls.get(telegramId);
   if (!session) return;
   if (ctx.chat.id !== session.chatId) return;
-  if (session.processing) return;
 
-  // Cooldown 2 detik antar roll
-  const now = Date.now();
-  if (session.lastRollTime && (now - session.lastRollTime) < 2000) {
-    const sisaMs = 2000 - (now - session.lastRollTime);
-    const sisaDtk = Math.ceil(sisaMs / 1000);
-    await ctx.reply(`⏳ *Anda terlalu cepat!* Harap tunggu ${sisaDtk} detik lagi sebelum roll berikutnya.`, { parse_mode: 'Markdown' });
-    return;
-  }
-  session.lastRollTime = now;
+  // Ambil slot secara atomik — hanya 3 slot tersedia
+  const slot = ++session.slotCounter;
+  if (slot > 3) return; // Lewat dari 3, abaikan
 
-  session.processing = true;
-  session.collected.push(value);
-  const count = session.collected.length;
+  // Simpan value di slot yang tepat
+  session.collected[slot - 1] = value;
 
-  // Kirim hasil tiap dadu satu per satu
-  await ctx.reply(
-    `✅ *Dadu ${count}/3* → hasil: *[${value}]*`,
-    { parse_mode: 'Markdown' }
-  );
+  // Kirim konfirmasi (reply ke pesan dadu jika available)
+  const replyOpts = { parse_mode: 'Markdown' };
+  if (ctx.message?.message_id) replyOpts.reply_to_message_id = ctx.message.message_id;
+  await ctx.reply(`✅ *Dadu ${slot}/3* → hasil: *[${value}]*`, replyOpts);
 
-  if (count < 3) {
-    session.processing = false;
-  } else {
-    // 3 dadu terkumpul → hapus keyboard, proses hasil
+  // Jika slot ke-3 sudah terisi, proses hasil
+  if (slot === 3) {
     clearTimeout(session.timeout);
     waitingRolls.delete(telegramId);
 

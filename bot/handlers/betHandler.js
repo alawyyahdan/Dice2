@@ -35,9 +35,14 @@ function registerBetHandler(bot) {
     // Lazy require untuk hindari circular dependency di load time
     const { waitingRolls, handleUserDiceRoll } = require('./diceHandler');
     if (waitingRolls.has(telegramId)) {
-      // Hanya proses jika user tekan tombol 🎲
+      // User tap tombol 🎲 (Reply Keyboard kirim TEXT, bukan dice)
+      // Kita kirim sendDice sendiri untuk dapat value asli
       if (text === '🎲') {
-        return handleUserDiceRoll(ctx, telegramId);
+        const session = waitingRolls.get(telegramId);
+        if (session && session.collected.length < 3) {
+          const diceMsg = await ctx.telegram.sendDice(ctx.chat.id, { emoji: '🎲' });
+          return handleUserDiceRoll(ctx, telegramId, diceMsg.dice.value);
+        }
       }
       // Pesan lain diabaikan selama sesi roll berlangsung
       return;
