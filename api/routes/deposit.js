@@ -443,49 +443,56 @@ router.post('/action', require('../middlewares/authMiddleware'), async (req, res
     dep.updatedAt = Date.now();
     await dep.save();
 
-    // SINKRONISASI TELEGRAM NOTIFIKASI
-    if (dep.notifyMessageId) {
-      const config = await Setting.findOne();
-      if (config.admin && config.admin.notificationTelegramId && process.env.NOTIFY_BOT_TOKEN) {
-        try {
-          const axios = require('axios');
-          const statusText = action === 'success' ? '✅ *STATUS: DITERIMA*' : '❌ *STATUS: DITOLAK*';
-          await axios.post(`https://api.telegram.org/bot${process.env.NOTIFY_BOT_TOKEN}/editMessageText`, {
-            chat_id: config.admin.notificationTelegramId,
-            message_id: dep.notifyMessageId,
-            text: `🔔 *INFO DEPOSIT MANUAL*\n\n👤 User: @${dep.telegramId}\n💰 Jumlah: *${dep.amount} pt*\n\n${statusText}\nAlasan: Diproses via Admin Dashboard`,
-            parse_mode: 'Markdown'
-          });
-        } catch(e) { console.error('Gagal sync notif admin deposit:', e.message); }
-      }
+    // Ambil settings SEKALI saja lalu jalankan semua operasi paralel
+    const config = await Setting.findOne();
+
+    const tasks = [];
+
+    // 1. Edit pesan notif admin di Telegram (notify bot)
+    if (dep.notifyMessageId && config?.admin?.notificationTelegramId && process.env.NOTIFY_BOT_TOKEN) {
+      const statusText = action === 'success' ? '✅ *STATUS: DITERIMA*' : '❌ *STATUS: DITOLAK*';
+      tasks.push(
+        axios.post(`https://api.telegram.org/bot${process.env.NOTIFY_BOT_TOKEN}/editMessageText`, {
+          chat_id: config.admin.notificationTelegramId,
+          message_id: dep.notifyMessageId,
+          text: `🔔 *INFO DEPOSIT MANUAL*\n\n👤 User: @${dep.telegramId}\n💰 Jumlah: *${dep.amount} pt*\n\n${statusText}\nAlasan: Diproses via Admin Dashboard`,
+          parse_mode: 'Markdown'
+        }).catch(e => console.error('Gagal sync notif admin deposit:', e.message))
+      );
     }
 
+    // 2. Notif user + update balance (tergantung action)
     if (action === 'success') {
       const nominal = dep.amount;
       const topupTotal = nominal + (dep.bonusApplied || 0);
       const finalTOInc = dep.promoId ? (dep.turnoverApplied || 0) : nominal;
 
-      await User.findByIdAndUpdate(
-        dep.userId,
-        {
-          $inc: { balance: topupTotal, totalDeposit: nominal, turnoverRequired: finalTOInc }
-        }
-      );
-      const settings = await Setting.findOne();
-      let successMsg = settings?.strings?.depositSuccess || '✅ <b>Deposit Manual Berhasil!</b>\n\nNominal: <b>{amount} poin</b> telah divalidasi dan masuk ke akun Anda.';
+      let successMsg = config?.strings?.depositSuccess || '✅ <b>Deposit Manual Berhasil!</b>\n\nNominal: <b>{amount} poin</b> telah divalidasi dan masuk ke akun Anda.';
       successMsg = successMsg.replace(/\{amount\}/g, nominal.toLocaleString('id-ID'));
-      await sendTelegramMessage(dep.telegramId, successMsg);
+
+      tasks.push(
+        User.findByIdAndUpdate(dep.userId, {
+          $inc: { balance: topupTotal, totalDeposit: nominal, turnoverRequired: finalTOInc }
+        })
+      );
+      tasks.push(sendTelegramMessage(dep.telegramId, successMsg));
     } else {
-      const settings = await Setting.findOne();
-      let failedMsg = settings?.strings?.depositFailed || '❌ <b>Deposit Dibatalkan!</b>\n\nNominal: <b>{amount} poin</b> ditolak oleh Admin. Hubungi CS jika ada kendala.';
+      let failedMsg = config?.strings?.depositFailed || '❌ <b>Deposit Dibatalkan!</b>\n\nNominal: <b>{amount} poin</b> ditolak oleh Admin. Hubungi CS jika ada kendala.';
       failedMsg = failedMsg.replace(/\{amount\}/g, dep.amount.toLocaleString('id-ID'));
-      await sendTelegramMessage(dep.telegramId, failedMsg);
+      tasks.push(sendTelegramMessage(dep.telegramId, failedMsg));
     }
 
-    // Hapus pesan tagihan/instruksi manual/QR jika sebelumnya dikirim ke Telegram user
+    // 3. Hapus pesan tagihan/instruksi manual/QR dari chat user
     if (dep.qrMessageId) {
-      await deleteTelegramMessage(dep.telegramId, dep.qrMessageId);
-      dep.qrMessageId = null; // optional cleanup
+      tasks.push(deleteTelegramMessage(dep.telegramId, dep.qrMessageId));
+    }
+
+    // Jalankan semua task paralel sekaligus
+    await Promise.all(tasks);
+
+    // Cleanup qrMessageId di DB jika ada
+    if (dep.qrMessageId) {
+      dep.qrMessageId = null;
       await dep.save();
     }
 
