@@ -382,8 +382,8 @@ export default function SettingsPage() {
                
                <div className="flex items-center justify-between bg-black/30 p-4 rounded-lg border border-slate-800 mb-6 group cursor-default">
                  <div>
-                    <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">CACHE MEMORY TERPAKAI</div>
-                    <div className="text-2xl font-black text-white">{maintenanceStats.cacheSize} <span className="text-sm text-slate-400 font-bold">MB</span></div>
+                    <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">NODE.JS MEMORY (RSS)</div>
+                    <div className="text-2xl font-black text-white">{maintenanceStats.nodeMem ?? 0} <span className="text-sm text-slate-400 font-bold">MB</span></div>
                  </div>
                  <div className="text-4xl opacity-40 group-hover:opacity-100 transition-opacity">⚡</div>
                </div>
