@@ -70,42 +70,43 @@ function registerDiceHandler(bot, pendingBets, roundTracker) {
       chatId: ctx.chat.id,
       bet,
       collected: [],
-      slotCounter: 0,   // Atomic slot: 3 tersedia, siapa cepat dapat slot
+      chain: Promise.resolve(), // Mutex: setiap roll dirantai sequential
       timeout,
     });
   });
 }
 
-// Dipanggil dari betHandler/dice handler saat user kirim dadu 🎲 atau tap tombol
-// Menggunakan slot atomic: 3 slot tersedia, siapapun yang datang pertama dapat slot 1,2,3
-// Slot ke-4 dan seterusnya langsung diabaikan
-async function handleUserDiceRoll(ctx, telegramId, value) {
+// Dipanggil saat dice masuk (dari button tap atau native emoji)
+// Menggunakan promise-chain mutex → dijamin sequential meskipun Telegraf proses concurrent
+function handleUserDiceRoll(ctx, telegramId, value) {
   const session = waitingRolls.get(telegramId);
   if (!session) return;
   if (ctx.chat.id !== session.chatId) return;
 
-  // Ambil slot secara atomik — hanya 3 slot tersedia
-  const slot = ++session.slotCounter;
-  if (slot > 3) return; // Lewat dari 3, abaikan
+  // Tambahkan ke rantai promise — setiap roll menunggu roll sebelumnya selesai
+  session.chain = session.chain.then(async () => {
+    // Re-check session masih valid (bisa sudah dihapus saat dadu ke-3 diproses)
+    const s = waitingRolls.get(telegramId);
+    if (!s) return;
+    // Sudah penuh (3 dadu), buang sisanya
+    if (s.collected.length >= 3) return;
 
-  // Simpan value di slot yang tepat
-  session.collected[slot - 1] = value;
+    s.collected.push(value);
+    const count = s.collected.length;
 
-  // Kirim konfirmasi (reply ke pesan dadu jika available)
-  const replyOpts = { parse_mode: 'Markdown' };
-  if (ctx.message?.message_id) replyOpts.reply_to_message_id = ctx.message.message_id;
-  await ctx.reply(`✅ *Dadu ${slot}/3* → hasil: *[${value}]*`, replyOpts);
+    // Reply ke pesan dadu si user jika ada message_id
+    const replyOpts = { parse_mode: 'Markdown' };
+    if (ctx.message?.message_id) replyOpts.reply_to_message_id = ctx.message.message_id;
+    await ctx.reply(`✅ *Dadu ${count}/3* → hasil: *[${value}]*`, replyOpts);
 
-  // Jika slot ke-3 sudah terisi, proses hasil
-  if (slot === 3) {
-    clearTimeout(session.timeout);
-    waitingRolls.delete(telegramId);
-
-    const { removeRollKeyboard } = require('../utils/keyboard');
-    await ctx.reply('✅ Semua dadu sudah diroll!', { ...removeRollKeyboard });
-
-    await processResult(ctx, session.bet, session.collected, 'user');
-  }
+    if (count === 3) {
+      clearTimeout(s.timeout);
+      waitingRolls.delete(telegramId);
+      const { removeRollKeyboard } = require('../utils/keyboard');
+      await ctx.reply('✅ Semua dadu sudah diroll!', { ...removeRollKeyboard });
+      await processResult(ctx, s.bet, s.collected, 'user');
+    }
+  }).catch(err => console.error('[DiceHandler] chain error:', err));
 }
 
 async function processResult(ctx, bet, dice, rolledBy) {
