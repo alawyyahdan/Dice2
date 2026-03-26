@@ -132,6 +132,27 @@ router.post('/2fa/disable', async (req, res) => {
   }
 });
 
+// Helper: ukur CPU usage nyata dengan sampling 100ms
+function getCpuUsagePercent() {
+  return new Promise((resolve) => {
+    const cpusBefore = os.cpus();
+    setTimeout(() => {
+      const cpusAfter = os.cpus();
+      let totalIdle = 0, totalTick = 0;
+      for (let i = 0; i < cpusBefore.length; i++) {
+        const before = cpusBefore[i].times;
+        const after = cpusAfter[i].times;
+        const idle = (after.idle - before.idle);
+        const total = Object.keys(after).reduce((acc, k) => acc + (after[k] - before[k]), 0);
+        totalIdle += idle;
+        totalTick += total;
+      }
+      const usage = totalTick === 0 ? 0 : (1 - totalIdle / totalTick) * 100;
+      resolve(parseFloat(usage.toFixed(2)));
+    }, 100);
+  });
+}
+
 // GET /api/admin/system/stats
 router.get('/system/stats', async (req, res) => {
   try {
@@ -155,9 +176,8 @@ router.get('/system/stats', async (req, res) => {
     const usedMem = totalMem - freeMem;
     const memUsagePercent = ((usedMem / totalMem) * 100).toFixed(2);
     
-    const loadAvg = os.loadavg();
-    const cpuCount = os.cpus().length;
-    const cpuUsagePercent = ((loadAvg[0] / cpuCount) * 100).toFixed(2);
+    // CPU usage real via sampling (bukan loadavg)
+    const cpuUsagePercent = await getCpuUsagePercent();
 
     const uptimeSeconds = os.uptime();
     const days = Math.floor(uptimeSeconds / (24 * 3600));
@@ -171,7 +191,7 @@ router.get('/system/stats', async (req, res) => {
     res.json({
       dbUsed: parseFloat(dbUsedMb),
       dbMax: maxDbSize,
-      cpuUsage: parseFloat(cpuUsagePercent),
+      cpuUsage: cpuUsagePercent,
       ramUsage: {
         used: (usedMem / (1024 * 1024 * 1024)).toFixed(2), // GB
         total: (totalMem / (1024 * 1024 * 1024)).toFixed(2), // GB
