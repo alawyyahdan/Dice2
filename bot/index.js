@@ -1,8 +1,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const { Telegraf } = require('telegraf');
-// PENTING: Harus pakai mongoose yang sama dengan api/models
-// supaya semua model (Ticket, Group, Setting, dll) bisa pakai koneksi DB yang sama
-const mongoose = require('../api/node_modules/mongoose');
+// PENTING: Gunakan mongoose. (Jika ada error schema, hapus npm module duplikat)
+const mongoose = require('mongoose');
 
 const userMiddleware = require('./middlewares/userMiddleware');
 const groupMiddleware = require('./middlewares/groupMiddleware');

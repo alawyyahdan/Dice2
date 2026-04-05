@@ -70,7 +70,7 @@ cd ..
 echo "🚀 Menjalankan aplikasi via PM2..."
 
 # Hapus dulu kalau ada proses lama biar gak bentrok
-pm2 delete dice-api dice-bot dice-dashboard 2>/dev/null || true
+pm2 delete dice-api dice-bot dice-dashboard diceCS-api diceCS-bot dice-cs-bot dice-cs-dashboard 2>/dev/null || true
 
 # Start menggunakan ecosystem file
 pm2 start ecosystem.config.js

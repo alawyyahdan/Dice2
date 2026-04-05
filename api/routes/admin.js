@@ -247,6 +247,15 @@ router.post('/system/reset-db', async (req, res) => {
       await require('../models/User').deleteMany({});
       cleared.push('Data User');
     }
+    if (targets.includes('cs')) {
+      await require('../models/Ticket').deleteMany({});
+      await require('../models/Message').deleteMany({});
+      cleared.push('Customer Service (Tiket & Pesan)');
+    }
+    if (targets.includes('broadcast')) {
+      await require('../models/Broadcast').deleteMany({});
+      cleared.push('Riwayat Broadcast');
+    }
 
     res.json({ success: true, message: `Berhasil mereset data: ${cleared.join(', ')}` });
   } catch (err) {

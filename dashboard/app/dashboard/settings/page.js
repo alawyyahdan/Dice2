@@ -42,6 +42,8 @@ export default function SettingsPage() {
     withdraws: false,
     angpaos: false,
     users: false,
+    cs: false,
+    broadcast: false
   });
 
   const handleClearCache = async () => {
@@ -65,7 +67,7 @@ export default function SettingsPage() {
     try {
       const res = await api.resetDatabase({ targets: selected });
       alert('✅ ' + res.message);
-      setResetDbSelection({ bets: false, deposits: false, withdraws: false, angpaos: false, users: false });
+      setResetDbSelection({ bets: false, deposits: false, withdraws: false, angpaos: false, users: false, cs: false, broadcast: false });
     } catch (e) {
       alert('❌ Gagal mereset database: ' + e.message);
     }
@@ -406,6 +408,8 @@ export default function SettingsPage() {
                   { id: 'withdraws', label: 'Riwayat Withdraw' },
                   { id: 'angpaos', label: 'Data Angpao Aktif & Riwayat' },
                   { id: 'users', label: 'Semua Data User (Termasuk Saldo Poin)' },
+                  { id: 'cs', label: 'Data Customer Service (Tiket & Chat)' },
+                  { id: 'broadcast', label: 'Riwayat Log Broadcast' }
                 ].map(item => (
                   <label key={item.id} className={`flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer ${resetDbSelection[item.id] ? 'bg-rose-900/40 border-rose-500' : 'bg-black/20 border-slate-800 hover:border-slate-600'}`}>
                     <input type="checkbox" className="w-5 h-5 accent-rose-500 rounded cursor-pointer" checked={resetDbSelection[item.id]} onChange={(e) => setResetDbSelection({ ...resetDbSelection, [item.id]: e.target.checked })} />
