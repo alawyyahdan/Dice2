@@ -7,13 +7,18 @@ const axios = require('axios');
 // In-memory map: promptMessageId -> { type, recordId, originalMsgId, chatId, originalText }
 const pendingRejects = new Map();
 
-module.exports = function startNotifyBot(mainBotToken) {
-  if (!process.env.NOTIFY_BOT_TOKEN) {
-    console.log('[NotifyBot] NOTIFY_BOT_TOKEN tidak ada, bot notif dinonaktifkan.');
-    return;
-  }
+module.exports = function startNotifyBot(mainBot, mainBotToken) {
+  let notifyBot;
 
-  const notifyBot = new Telegraf(process.env.NOTIFY_BOT_TOKEN);
+  // Use a separate bot instance ONLY if NOTIFY_BOT_TOKEN is provided AND different
+  if (process.env.NOTIFY_BOT_TOKEN && process.env.NOTIFY_BOT_TOKEN !== mainBotToken) {
+    notifyBot = new Telegraf(process.env.NOTIFY_BOT_TOKEN);
+  } else {
+    // Reuse the main bot instance
+    notifyBot = mainBot;
+    // Fallback if APIs send to NOTIFY_BOT_TOKEN
+    process.env.NOTIFY_BOT_TOKEN = mainBotToken;
+  }
 
   // Kirim pesan ke user via bot utama
   const notifyUser = async (telegramId, text) => {
@@ -27,7 +32,9 @@ module.exports = function startNotifyBot(mainBotToken) {
   // Edit pesan notif admin (hapus tombol, tampilkan status)
   const editNotif = async (chatId, msgId, newText) => {
     try {
-      await notifyBot.telegram.editMessageText(chatId, msgId, undefined, newText, { parse_mode: 'Markdown' });
+      await axios.post(`https://api.telegram.org/bot${process.env.NOTIFY_BOT_TOKEN}/editMessageText`, {
+         chat_id: chatId, message_id: msgId, text: newText, parse_mode: 'Markdown'
+      });
     } catch (e) { console.error('[NotifyBot] editNotif error:', e.message); }
   };
 
@@ -222,10 +229,15 @@ module.exports = function startNotifyBot(mainBotToken) {
     }
   });
 
-  notifyBot.launch()
-    .then(() => console.log('🔔 NotifyBot started successfully!'))
-    .catch(e => console.error('[NotifyBot] Launch error:', e.message));
+  // Jika notifyBot adalah instance terpisah, jalankan polling-nya
+  if (notifyBot !== mainBot) {
+    notifyBot.launch()
+      .then(() => console.log('🔔 NotifyBot started successfully!'))
+      .catch(e => console.error('[NotifyBot] Launch error:', e.message));
 
-  process.once('SIGINT', () => notifyBot.stop('SIGINT'));
-  process.once('SIGTERM', () => notifyBot.stop('SIGTERM'));
+    process.once('SIGINT', () => notifyBot.stop('SIGINT'));
+    process.once('SIGTERM', () => notifyBot.stop('SIGTERM'));
+  } else {
+    console.log('🔔 NotifyBot diintegrasikan ke bot utama (Token sama).');
+  }
 };

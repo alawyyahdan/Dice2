@@ -128,6 +128,16 @@ function registerBetHandler(bot) {
       
       const roundId = getCurrentRoundId();
       
+      // Cek batas maksimal total 25000 per ronde
+      const existingBetsCount = await Bet.aggregate([
+        { $match: { telegramId, isGroup: true, groupId: String(ctx.chat.id), roundId: roundId, diceResult: { $size: 0 } } },
+        { $group: { _id: null, total: { $sum: "$betAmount" } } }
+      ]);
+      const currentTotal = existingBetsCount.length > 0 ? existingBetsCount[0].total : 0;
+      if (currentTotal + bet.betAmount > 25000) {
+        return ctx.reply(`❌ Batas total bet per periode adalah <b>25,000 poin</b>.\nTotal bet kamu: <b>${currentTotal}</b>\nSisa kuota: <b>${25000 - currentTotal}</b> poin.`, { parse_mode: 'HTML' });
+      }
+
       // Deduct balance directly (rounded to 2 decimals)
       const deductAmt = Number(Number(bet.betAmount).toFixed(2));
       const updatedUser = await User.findByIdAndUpdate(user._id, { $inc: { balance: -deductAmt } }, { new: true });

@@ -38,9 +38,18 @@ export default function DepositPage() {
   };
 
   const handleAction = async (id, action) => {
+    let note = '';
+    if (action === 'failed') {
+      note = prompt('Masukkan alasan pembatalan deposit (opsional/wajib):');
+      if (note === null) return;
+      if (!note.trim()) {
+        note = 'Dibatalkan oleh Admin';
+      }
+    }
+
     if (!confirm(`Apakah Anda yakin ingin menandai deposit ini sebagai ${action.toUpperCase()}?`)) return;
     try {
-      await api.depositAction(id, action);
+      await api.depositAction(id, action, note);
       loadDeposits();
     } catch (e) {
       alert('❌ Gagal: ' + (e.response?.data?.error || e.message));

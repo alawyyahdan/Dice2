@@ -95,8 +95,8 @@ export const api = {
   testPayment: (data) =>
     apiFetch('/api/settings/test-payment', { method: 'POST', body: JSON.stringify(data) }),
 
-  depositAction: (id, action) =>
-    apiFetch('/api/deposit/action', { method: 'POST', body: JSON.stringify({ id, action }) }),
+  depositAction: (id, action, note) =>
+    apiFetch('/api/deposit/action', { method: 'POST', body: JSON.stringify({ id, action, note }) }),
 
   depositResync: () =>
     apiFetch('/api/deposit/resync', { method: 'POST' }),

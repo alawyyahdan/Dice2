@@ -137,7 +137,7 @@ registerTransferHandler(bot);
 registerAngpaoHandler(bot);
 
 // --- START NOTIFICATION ADMIN BOT ---
-require('./notifyBot')(process.env.BOT_TOKEN);
+require('./notifyBot')(bot, process.env.BOT_TOKEN);
 
 // Error handler
 bot.catch((err, ctx) => {

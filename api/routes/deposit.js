@@ -432,7 +432,7 @@ router.post('/send-bayar', async (req, res) => {
 // 6. POST /api/deposit/action - Admin Manual Accept/Reject
 router.post('/action', require('../middlewares/authMiddleware'), async (req, res) => {
   try {
-    const { id, action } = req.body;
+    const { id, action, note } = req.body;
     if (!['success', 'failed'].includes(action)) return res.status(400).json({ error: 'Invalid action' });
     
     const dep = await Deposit.findById(id);
@@ -440,6 +440,9 @@ router.post('/action', require('../middlewares/authMiddleware'), async (req, res
     if (dep.status !== 'pending') return res.status(400).json({ error: 'Deposit sudah diproses' });
 
     dep.status = action; // 'success' or 'failed'
+    if (action === 'failed' && note) dep.adminNote = note;
+    else if (action === 'success') dep.adminNote = 'Diproses via Admin Dashboard';
+    
     dep.updatedAt = Date.now();
     await dep.save();
 
@@ -452,10 +455,10 @@ router.post('/action', require('../middlewares/authMiddleware'), async (req, res
     if (dep.notifyMessageId && config?.admin?.notificationTelegramId && process.env.NOTIFY_BOT_TOKEN) {
       const statusText = action === 'success' ? '✅ *STATUS: DITERIMA*' : '❌ *STATUS: DITOLAK*';
       tasks.push(
-        axios.post(`https://api.telegram.org/bot${process.env.NOTIFY_BOT_TOKEN}/editMessageText`, {
+        axios.post(`https://api.telegram.org/bot${process.env.NOTIFY_BOT_TOKEN || process.env.BOT_TOKEN}/editMessageText`, {
           chat_id: config.admin.notificationTelegramId,
           message_id: dep.notifyMessageId,
-          text: `🔔 *INFO DEPOSIT MANUAL*\n\n👤 User: @${dep.telegramId}\n💰 Jumlah: *${dep.amount} pt*\n\n${statusText}\nAlasan: Diproses via Admin Dashboard`,
+          text: `🔔 *INFO DEPOSIT MANUAL*\n\n👤 User: @${dep.telegramId}\n💰 Jumlah: *${dep.amount} pt*\n\n${statusText}\nAlasan: ${action === 'failed' && note ? note : 'Diproses via Admin Dashboard'}`,
           parse_mode: 'Markdown'
         }).catch(e => console.error('Gagal sync notif admin deposit:', e.message))
       );
@@ -479,6 +482,7 @@ router.post('/action', require('../middlewares/authMiddleware'), async (req, res
     } else {
       let failedMsg = config?.strings?.depositFailed || '❌ <b>Deposit Dibatalkan!</b>\n\nNominal: <b>{amount} poin</b> ditolak oleh Admin. Hubungi CS jika ada kendala.';
       failedMsg = failedMsg.replace(/\{amount\}/g, dep.amount.toLocaleString('id-ID'));
+      if (note) failedMsg += `\n\n<b>Alasan:</b> ${note}`;
       tasks.push(sendTelegramMessage(dep.telegramId, failedMsg));
     }
 
