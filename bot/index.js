@@ -1,6 +1,8 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const { Telegraf } = require('telegraf');
-const mongoose = require('mongoose');
+// PENTING: Harus pakai mongoose yang sama dengan api/models
+// supaya semua model (Ticket, Group, Setting, dll) bisa pakai koneksi DB yang sama
+const mongoose = require('../api/node_modules/mongoose');
 
 const userMiddleware = require('./middlewares/userMiddleware');
 const groupMiddleware = require('./middlewares/groupMiddleware');
@@ -28,12 +30,37 @@ if (!mongoUri) {
 
 const bot = new Telegraf(botToken);
 
-// Connect MongoDB
+// Connect MongoDB — semua handler dan bot.launch harus di dalam .then()
 mongoose.connect(mongoUri)
   .then(async () => {
     console.log('✅ Connected to MongoDB');
     const settingsService = require('../api/services/settingsService');
     await settingsService.loadSettings();
+
+    // Register all handlers (setelah DB ready)
+    registerMenuHandler(bot);
+    registerInfoHandler(bot);
+    registerWalletHandler(bot);
+    registerBetHandler(bot);
+    registerDiceHandler(bot, pendingBets, roundTracker);
+    registerGroupGameManager(bot);
+    registerTransferHandler(bot);
+    registerAngpaoHandler(bot);
+
+    // Start Notify & CS Bot
+    require('./notifyBot')(bot, process.env.BOT_TOKEN);
+    require('./csBot')();
+
+    // Error handler
+    bot.catch((err, ctx) => {
+      console.error(`Bot error for ${ctx.updateType}:`, err);
+      ctx.reply('❌ Terjadi kesalahan. Silakan coba lagi.').catch(() => {});
+    });
+
+    // Launch bot
+    bot.launch()
+      .then(() => console.log('🤖 Bot started!'))
+      .catch(err => console.error('Failed to launch bot:', err));
   })
   .catch(err => { 
     console.error('❌ MongoDB connection error:', err.message); 
@@ -125,31 +152,7 @@ bot.on('my_chat_member', async (ctx) => {
   }
 });
 
-// Register all handlers
-// pendingBets & roundTracker di-inject ke diceHandler untuk hindari circular dependency
-registerMenuHandler(bot);
-registerInfoHandler(bot);
-registerWalletHandler(bot);
-registerBetHandler(bot);
-registerDiceHandler(bot, pendingBets, roundTracker);
-registerGroupGameManager(bot);
-registerTransferHandler(bot);
-registerAngpaoHandler(bot);
-
-// --- START NOTIFICATION ADMIN BOT ---
-require('./notifyBot')(bot, process.env.BOT_TOKEN);
-
-// Error handler
-bot.catch((err, ctx) => {
-  console.error(`Bot error for ${ctx.updateType}:`, err);
-  ctx.reply('❌ Terjadi kesalahan. Silakan coba lagi.').catch(() => {});
-});
-
-// Launch bot
-bot.launch()
-  .then(() => console.log('🤖 Bot started!'))
-  .catch(err => console.error('Failed to launch bot:', err));
-
 // Graceful shutdown
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
+

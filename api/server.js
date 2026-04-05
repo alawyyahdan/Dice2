@@ -17,7 +17,11 @@ const adminRoute = require('./routes/admin');
 const analyticsRoute = require('./routes/analytics');
 const leaderboardRoute = require('./routes/leaderboard');
 const promotionsRoute = require('./routes/promotions');
+const csRoute = require('./routes/cs');
+const broadcastRoute = require('./routes/broadcast');
+const channelRoute = require('./routes/channel');
 const settingsService = require('./services/settingsService');
+const initCleanupJobs = require('./jobs/cleanup');
 
 const app = express();
 const PORT = process.env.API_PORT || 3001;
@@ -43,6 +47,9 @@ app.use('/api/admin', adminRoute);
 app.use('/api/analytics', analyticsRoute);
 app.use('/api/leaderboard', leaderboardRoute);
 app.use('/api/promotions', promotionsRoute);
+app.use('/api/cs', csRoute);
+app.use('/api/broadcast', broadcastRoute);
+app.use('/api/channel', channelRoute);
 
 
 const dicePage = `<!DOCTYPE html>
@@ -109,7 +116,17 @@ connectDB().then(async () => {
   // Load Default Settings ke Memory (RAM)
   await settingsService.loadSettings();
 
-  app.listen(PORT, () => {
-    console.log(`🚀 API Server running on port ${PORT}`);
+  // Initialize background cleanup workers
+  initCleanupJobs();
+
+  // Start HTTP & WebSocket Server
+  const http = require('http');
+  const server = http.createServer(app);
+  
+  const { initSocket } = require('./socket');
+  initSocket(server);
+
+  server.listen(PORT, () => {
+    console.log(`🚀 API + WebSockets Server running on port ${PORT}`);
   });
 });

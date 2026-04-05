@@ -148,4 +148,12 @@ export const api = {
   updatePromotion: (id, data) => apiFetch(`/api/promotions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deletePromotion: (id) => apiFetch(`/api/promotions/${id}`, { method: 'DELETE' }),
 
+  // CS TICKETS
+  getTickets: (status) => apiFetch(`/api/cs/tickets?status=${status}`),
+  getTicketMessages: (id) => apiFetch(`/api/cs/tickets/${id}/messages`),
+  replyTicket: (id, text) => apiFetch(`/api/cs/tickets/${id}/reply`, { method: 'POST', body: JSON.stringify({ text }) }),
+  closeTicket: (id) => apiFetch(`/api/cs/tickets/${id}/close`, { method: 'POST' }),
+  
+  // CS BROADCAST
+  getBroadcasts: () => apiFetch('/api/broadcast'),
 };

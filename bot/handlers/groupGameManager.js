@@ -88,10 +88,17 @@ function registerGroupGameManager(bot) {
         );
       } catch (err) {
         console.error(`Gagal mengirim warning ke grup ${groupId}:`, err.message);
-        // Clean up group if bot is kicked
-        if (err.message.includes('Forbidden') || err.message.includes('chat not found')) {
-            console.log(`Menghapus grup ${groupId} dari activeGroups karena Forbidden/Not Found.`);
+        // Auto-delete group from DB & memory if bot is kicked or group not found
+        if (
+          err.message.includes('Forbidden') ||
+          err.message.includes('chat not found') ||
+          err.message.includes('bot was kicked') ||
+          err.message.includes('the group chat was deleted')
+        ) {
+            console.log(`[GroupManager] Menghapus grup ${groupId} dari DB & activeGroups (${err.message.slice(0, 60)}).`);
             activeGroups.delete(groupId);
+            // Hapus dari DB juga supaya nggak muncul lagi di dashboard
+            Group.deleteOne({ chatId: String(groupId) }).catch(() => {});
         }
       }
     }
@@ -241,7 +248,19 @@ function registerGroupGameManager(bot) {
         );
 
       } catch (err) {
-        console.error(`Group Manager Error [Group ${groupId}]:`, err);
+        const isPermanent = (
+          err.message?.includes('Forbidden') ||
+          err.message?.includes('chat not found') ||
+          err.message?.includes('bot was kicked') ||
+          err.message?.includes('the group chat was deleted')
+        );
+        if (isPermanent) {
+          console.log(`[GroupManager] Auto-remove grup ${groupId} dari DB (${err.message?.slice(0, 60)}).`);
+          activeGroups.delete(groupId);
+          Group.deleteOne({ chatId: String(groupId) }).catch(() => {});
+        } else {
+          console.error(`Group Manager Error [Group ${groupId}]:`, err.message);
+        }
       } finally {
         // BUKA KUNCI GRUP AGAR BISA TERIMA BET LAGI
         rollingGroups.delete(String(groupId));

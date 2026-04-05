@@ -15,6 +15,9 @@ const navItems = [
   { href: '/dashboard/groups', label: '🏢 Manajemen Grup' },
   { href: '/dashboard/promosi', label: '📢 Manajemen Promosi' },
   { href: '/dashboard/settings', label: '⚙️ Pengaturan Game' },
+  { href: '/dashboard/cs/tickets', label: '💬 Support Tickets' },
+  { href: '/dashboard/cs/broadcast', label: '📢 CS Broadcast' },
+  { href: '/dashboard/cs/channel', label: '📺 Channel Manager' },
 ];
 
 export default function Sidebar({ isOpen, setIsOpen }) {
