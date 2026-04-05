@@ -23,18 +23,27 @@ const channelRoute = require('./routes/channel');
 const settingsService = require('./services/settingsService');
 const initCleanupJobs = require('./jobs/cleanup');
 
+const { globalLimiter, authLimiter } = require('./middlewares/rateLimiter');
+
 const app = express();
 const PORT = process.env.API_PORT || 3001;
+
+// Trust reverse proxy if running behind Nginx/Cloudflare for correct Rate Limit IP detection
+app.set('trust proxy', 1);
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
+// Terapkan Global Rate Limit ke semua route API
+app.use('/api/', globalLimiter);
+
 // Static files untuk Mini App
 app.use('/miniapp', express.static(path.join(__dirname, '../miniapp')));
 
 // Routes
-app.use('/api/auth', authRoute);
+// Terapkan Auth Limiter khusus (lebih ketat) untuk jalur Auth
+app.use('/api/auth', authLimiter, authRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/bets', betsRoute);
 app.use('/api/withdraw', withdrawRoute);

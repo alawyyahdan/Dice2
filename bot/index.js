@@ -1,7 +1,14 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const { Telegraf } = require('telegraf');
-// PENTING: Gunakan mongoose. (Jika ada error schema, hapus npm module duplikat)
-const mongoose = require('mongoose');
+// PENTING: Gunakan instance mongoose yang MURNI sama dengan yang di-require oleh API
+// Ini mencegah duplikasi instance (error buffering timeout) akibat npm auto-hoisting
+let mongoose;
+try {
+  const apiMongoosePath = require.resolve('mongoose', { paths: [require('path').join(__dirname, '../api')] });
+  mongoose = require(apiMongoosePath);
+} catch (e) {
+  mongoose = require('mongoose');
+}
 
 const userMiddleware = require('./middlewares/userMiddleware');
 const groupMiddleware = require('./middlewares/groupMiddleware');

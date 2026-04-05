@@ -25,9 +25,11 @@ export default function SettingsPage() {
   const [formSecurity, setFormSecurity] = useState({ username: '', password: '', notificationTelegramId: '' });
   const [qrSetup, setQrSetup] = useState({ secret: '', qrUrl: '' });
   const [otpInput, setOtpInput] = useState('');
+  const [formRateLimit, setFormRateLimit] = useState({ globalMax: 100, authMax: 15 });
 
   // General Settings State
   const [minBet, setMinBet] = useState(1);
+  const [maxBet, setMaxBet] = useState(500000);
   const [roundDuration, setRoundDuration] = useState(1);
   const [isBotActive, setIsBotActive] = useState(true);
   const [isGroupActive, setIsGroupActive] = useState(true);
@@ -157,6 +159,7 @@ export default function SettingsPage() {
         withdraw: { providerType: 'manual', autoWdLimit: 50, minWithdraw: 20, maxWithdraw: 10000, banks: [] }
       });
       setMinBet(data.minBet || 1);
+      setMaxBet(data.maxBet || 500000);
       setRoundDuration(data.roundDuration || 1);
       setIsBotActive(data.isBotActive !== false);
       setIsGroupActive(data.isGroupActive !== false);
@@ -166,6 +169,7 @@ export default function SettingsPage() {
       const profile = await api.getAdminProfile();
       setAdminProfile(profile);
       setFormSecurity({ username: profile.username, password: '', notificationTelegramId: profile.notificationTelegramId || '' });
+      setFormRateLimit(data.rateLimit || { globalMax: 150, authMax: 15 });
     } catch (e) {
       console.error(e);
     }
@@ -179,7 +183,7 @@ export default function SettingsPage() {
       if (sectionKey === 'odds') payload = { odds: formOdds };
       if (sectionKey === 'bounds') payload = { bounds: formBounds };
       if (sectionKey === 'strings') payload = { strings: formStrings };
-      if (sectionKey === 'general') payload = { minBet, roundDuration };
+      if (sectionKey === 'general') payload = { minBet, maxBet, roundDuration };
       if (sectionKey === 'bot_status') payload = { isBotActive, isGroupActive, isLeaderboardActive, forceSub: formForceSub };
       if (sectionKey === 'payment') payload = { paymentGateway: formPayment };
 
@@ -223,6 +227,18 @@ export default function SettingsPage() {
       loadSettings();
     } catch (e) {
       alert('❌ Gagal update profil: ' + e.message);
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateRateLimit = async () => {
+    setSaving(true);
+    try {
+      await api.updateSettings({ rateLimit: formRateLimit });
+      alert('✅ Konfigurasi Rate Limit & Anti-DDoS berhasil disimpan!');
+      loadSettings();
+    } catch (e) {
+      alert('❌ Gagal update rate limit: ' + e.message);
     }
     setSaving(false);
   };
@@ -1149,6 +1165,16 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="flex flex-col gap-3">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">MAKSIMAL BET GLOBAL (POIN)</label>
+                  <input
+                    type="number"
+                    value={maxBet}
+                    onChange={(e) => setMaxBet(parseFloat(e.target.value))}
+                    className="w-full bg-slate-900 border-2 border-slate-700 hover:border-slate-600 rounded-xl py-4 px-6 text-white font-bold text-lg focus:border-rose-500 outline-none transition-all"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-3">
                   <label className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">DURASI RONDE GRUP</label>
                   <select
                     value={roundDuration}
@@ -1407,6 +1433,49 @@ export default function SettingsPage() {
               )}
 
             </div>
+
+            {/* Anti-DDoS / Rate Limit */}
+            <div className="md:col-span-2 space-y-6 mt-6 pt-8 border-t border-slate-700">
+              <h3 className="text-xl font-bold text-slate-300">🛡️ Anti-DDoS & API Rate Limit</h3>
+              <p className="text-slate-400 text-sm mb-4">Batasi jumlah permintaan (requests) beruntun dari pengguna (per IP) untuk melindungi server dari serangan SPAM atau Bot Flooding. Otomatis diblokir jika melewati batas.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Global Rate Limit */}
+                <div className="p-6 bg-slate-900/50 rounded-xl border border-slate-700">
+                  <label className="text-xs font-black text-amber-500/80 uppercase tracking-widest block mb-2">Maximum Request API Umum</label>
+                  <p className="text-[10px] text-slate-500 mb-4 block">Batas interaksi dari MiniApp/Web per 1 Menit.</p>
+                  <input
+                    type="number"
+                    value={formRateLimit.globalMax}
+                    onChange={(e) => setFormRateLimit({ ...formRateLimit, globalMax: parseInt(e.target.value) || 0 })}
+                    className="w-full bg-slate-800 border-2 border-slate-700 rounded-xl py-3 px-4 text-white font-mono outline-none focus:border-amber-500 transition-colors"
+                  />
+                </div>
+
+                {/* Auth Rate Limit */}
+                <div className="p-6 bg-slate-900/50 rounded-xl border border-slate-700">
+                  <label className="text-xs font-black text-amber-500/80 uppercase tracking-widest block mb-2">Maximum Percobaan Login (Auth)</label>
+                  <p className="text-[10px] text-slate-500 mb-4 block">Batas upaya penembakan form login Admin per 5 Menit.</p>
+                  <input
+                    type="number"
+                    value={formRateLimit.authMax}
+                    onChange={(e) => setFormRateLimit({ ...formRateLimit, authMax: parseInt(e.target.value) || 0 })}
+                    className="w-full bg-slate-800 border-2 border-slate-700 rounded-xl py-3 px-4 text-white font-mono outline-none focus:border-amber-500 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4">
+                <button
+                  onClick={handleUpdateRateLimit}
+                  disabled={saving}
+                  className="px-8 py-4 bg-slate-700 hover:bg-slate-600 border border-slate-600 shadow-xl text-white font-black rounded-xl transition-all disabled:opacity-50"
+                >
+                  {saving ? '⏳ Memproses...' : '💾 UPDATE RULE ANTI-DDOS'}
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>

@@ -66,6 +66,8 @@ function registerBetHandler(bot) {
     }
 
     const minBet = config.minBet || 1;
+    const maxBetGlobal = config.maxBet || 500000;
+
     if (bet.betAmount < minBet) {
       return ctx.reply(`❌ Minimal bet adalah <b>${minBet} poin</b>.`, { parse_mode: 'HTML' });
     }
@@ -81,18 +83,19 @@ function registerBetHandler(bot) {
       );
     }
 
-    // Validasi max bet
-    const maxBet = getMaxBet(bet.betType, bet.jumlah);
-    if (bet.betAmount > maxBet) {
+    // Validasi max bet spesifik (Bounds)
+    const maxBetSpecific = getMaxBet(bet.betType, bet.jumlah);
+    if (bet.betAmount > maxBetSpecific) {
       return ctx.reply(
-        settingsService.getString('bet_max_exceeded', { jenis: bet.betType, max: maxBet }),
+        settingsService.getString('bet_max_exceeded', { jenis: bet.betType, max: maxBetSpecific }),
         { parse_mode: 'HTML' }
       );
     }
 
     const betLabel = formatBetLabel(bet);
 
-    // Anti-hedging hanya berlaku DI GRUP: cek DB bet aktif di ronde saat ini
+    // Cek Akumulasi & Anti-hedging (Di Grup) atau batas global (Private)
+    let accumulatedBet = 0;
     if (isGroup) {
       const { getCurrentRoundId } = require('./groupGameManager');
       const currentRoundId = getCurrentRoundId();
@@ -102,7 +105,9 @@ function registerBetHandler(bot) {
         groupId: String(ctx.chat.id),
         roundId: currentRoundId,
         diceResult: { $size: 0 } // belum diproses
-      }).select('betType');
+      }).select('betType betAmount');
+
+      accumulatedBet = existingBets.reduce((sum, b) => sum + b.betAmount, 0);
 
       const existingTypes = existingBets.map(b => b.betType);
       if (
@@ -113,6 +118,11 @@ function registerBetHandler(bot) {
       ) {
         return ctx.reply(settingsService.getString('bet_anti_hedging'), { parse_mode: 'HTML' });
       }
+    }
+
+    // Validasi Global Max Bet
+    if ((bet.betAmount + accumulatedBet) > maxBetGlobal) {
+      return ctx.reply(`❌ Maksimal total modal dalam 1 periode adalah <b>${maxBetGlobal} poin</b>. (Terakumulasi: ${accumulatedBet})`, { parse_mode: 'HTML' });
     }
 
     if (isGroup) {

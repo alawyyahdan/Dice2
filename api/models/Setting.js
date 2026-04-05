@@ -50,6 +50,7 @@ const settingSchema = new mongoose.Schema({
   },
 
   minBet: { type: Number, default: 1 },
+  maxBet: { type: Number, default: 500000 },
   roundDuration: { type: Number, default: 1 }, // dlm menit
   isBotActive: { type: Boolean, default: true },
   isGroupActive: { type: Boolean, default: true },
@@ -61,6 +62,13 @@ const settingSchema = new mongoose.Schema({
     isActive: { type: Boolean, default: false },
     channelUsername: { type: String, default: '' },
     channelUrl: { type: String, default: '' }
+  },
+
+  rateLimit: {
+    globalMax: { type: Number, default: 100 },
+    globalWindowMs: { type: Number, default: 60000 },
+    authMax: { type: Number, default: 15 },
+    authWindowMs: { type: Number, default: 300000 }
   },
 
   paymentGateway: {
