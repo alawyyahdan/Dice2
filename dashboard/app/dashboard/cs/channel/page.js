@@ -194,7 +194,7 @@ export default function ChannelManagerPage() {
           </div>
         ) : (
           <div className="mt-4 bg-yellow-900/30 border border-yellow-500/50 p-4 rounded-xl text-yellow-400 text-sm font-bold">
-            ⚠️ ID Channel belum diatur. Silakan atur di Pengaturan Game {">"} Force Subscribe, atau sistem tidak bisa mengirim.
+            ⚠️ ID Target Channel belum diatur. Silakan isi Username Target Channel di menu "Pengaturan Game &gt; System &amp; Bot Control", atau bot tidak bisa memposting pesan.
           </div>
         )}
       </div>

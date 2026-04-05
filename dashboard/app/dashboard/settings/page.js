@@ -1286,30 +1286,28 @@ export default function SettingsPage() {
                     </button>
                   </div>
 
-                  {formForceSub.isActive && (
-                    <div className="mt-4 space-y-3 pt-3 border-t border-slate-700/50 animate-in fade-in slide-in-from-top-2">
-                      <div>
-                        <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1.5 block">Username Channel (Bot harus Admin)</label>
-                        <input
-                          type="text"
-                          value={formForceSub.channelUsername}
-                          onChange={(e) => setFormForceSub({ ...formForceSub, channelUsername: e.target.value })}
-                          placeholder="@NamaChannel"
-                          className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white text-sm outline-none focus:border-indigo-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1.5 block">Link Invite Channel</label>
-                        <input
-                          type="text"
-                          value={formForceSub.channelUrl}
-                          onChange={(e) => setFormForceSub({ ...formForceSub, channelUrl: e.target.value })}
-                          placeholder="https://t.me/NamaChannel"
-                          className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white text-sm outline-none focus:border-indigo-500"
-                        />
-                      </div>
+                  <div className="mt-4 space-y-3 pt-3 border-t border-slate-700/50">
+                    <div>
+                      <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1.5 block">Username Target Channel (Buat Broadcast CS)</label>
+                      <input
+                        type="text"
+                        value={formForceSub.channelUsername}
+                        onChange={(e) => setFormForceSub({ ...formForceSub, channelUsername: e.target.value })}
+                        placeholder="@NamaChannel"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white text-sm outline-none focus:border-indigo-500"
+                      />
                     </div>
-                  )}
+                    <div>
+                      <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1.5 block">Link Invite Channel</label>
+                      <input
+                        type="text"
+                        value={formForceSub.channelUrl}
+                        onChange={(e) => setFormForceSub({ ...formForceSub, channelUrl: e.target.value })}
+                        placeholder="https://t.me/NamaChannel"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white text-sm outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
