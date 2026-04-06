@@ -22,6 +22,7 @@ const broadcastRoute = require('./routes/broadcast');
 const channelRoute = require('./routes/channel');
 const settingsService = require('./services/settingsService');
 const initCleanupJobs = require('./jobs/cleanup');
+const runMigrations = require('./jobs/migrate');
 
 const { globalLimiter, authLimiter } = require('./middlewares/rateLimiter');
 
@@ -122,6 +123,9 @@ app.use((req, res) => res.status(404).send(dicePage));
 
 // Connect DB & Start Server
 connectDB().then(async () => {
+  // Jalankan DB Migration (backfill field baru ke dokumen lama)
+  await runMigrations();
+
   // Load Default Settings ke Memory (RAM)
   await settingsService.loadSettings();
 
