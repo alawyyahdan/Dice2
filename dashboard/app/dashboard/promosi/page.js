@@ -3,6 +3,14 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
 import DataTable from '@/components/DataTable';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+function getToken() {
+  return document.cookie.match(/(?:^|; )admin_token=([^;]*)/)?.[1]
+    ? decodeURIComponent(document.cookie.match(/(?:^|; )admin_token=([^;]*)/)[1])
+    : null;
+}
+
 export default function PromosiPage() {
   const [promotions, setPromotions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,6 +20,12 @@ export default function PromosiPage() {
     title: '', bannerUrl: '', description: '', startDate: '', endDate: '', isActive: true
   });
   const textareaRef = useRef(null);
+
+  // Broadcast modal state
+  const [broadcastModal, setBroadcastModal] = useState(null); // promo object or null
+  const [broadcastType, setBroadcastType] = useState('users');
+  const [broadcastLoading, setBroadcastLoading] = useState(false);
+  const [channelLoading, setChannelLoading] = useState(null); // promo._id or null
 
   const loadPromotions = useCallback(async () => {
     setLoading(true);
@@ -74,6 +88,46 @@ export default function PromosiPage() {
     } catch (err) { alert('Gagal update status: ' + err.message); }
   }
 
+  async function handleBroadcast() {
+    if (!broadcastModal) return;
+    setBroadcastLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/promotions/${broadcastModal._id}/broadcast`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ type: broadcastType })
+      });
+      const text = await res.text();
+      let data = {};
+      try { data = JSON.parse(text); } catch(e) {}
+      if (!res.ok) throw new Error(data.error || `Server error ${res.status}: ${text.slice(0, 100)}`);
+      alert(`✅ Broadcast promosi "${broadcastModal.title}" berhasil dimulai! Target: ${data.broadcast?.targetCount || '?'} penerima.`);
+      setBroadcastModal(null);
+    } catch(e) {
+      alert('❌ Error: ' + e.message);
+    }
+    setBroadcastLoading(false);
+  }
+
+  async function handlePostChannel(promo) {
+    if (!confirm(`Kirim promosi "${promo.title}" ke Channel Telegram? Ini akan muncul di riwayat Channel Manager.`)) return;
+    setChannelLoading(promo._id);
+    try {
+      const res = await fetch(`${API_URL}/api/promotions/${promo._id}/post-channel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }
+      });
+      const text = await res.text();
+      let data = {};
+      try { data = JSON.parse(text); } catch(e) {}
+      if (!res.ok) throw new Error(data.error || `Server error ${res.status}: ${text.slice(0, 100)}`);
+      alert(`✅ Promosi "${promo.title}" berhasil diposting ke channel dan tercatat di Channel Manager!`);
+    } catch(e) {
+      alert('❌ Error: ' + e.message);
+    }
+    setChannelLoading(null);
+  }
+
   function insertText(prefix, suffix) {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -104,6 +158,15 @@ export default function PromosiPage() {
           {row.isActive ? 'Matikan' : 'Aktifkan'}
         </button>
         <button onClick={() => handleOpenModal(row)} className="text-blue-400 text-xs font-bold px-3 py-1.5 border border-blue-500/20 bg-blue-500/10 rounded">Edit</button>
+        <button 
+          onClick={() => { setBroadcastModal(row); setBroadcastType('users'); }}
+          className="text-purple-400 text-xs font-bold px-3 py-1.5 border border-purple-500/20 bg-purple-500/10 rounded hover:bg-purple-500/20 transition"
+        >📢 Broadcast</button>
+        <button 
+          onClick={() => handlePostChannel(row)}
+          disabled={channelLoading === row._id}
+          className="text-cyan-400 text-xs font-bold px-3 py-1.5 border border-cyan-500/20 bg-cyan-500/10 rounded hover:bg-cyan-500/20 transition disabled:opacity-50"
+        >{channelLoading === row._id ? '⏳...' : '📺 Post Channel'}</button>
         <button onClick={() => handleDelete(row)} className="text-rose-400 text-xs font-bold px-3 py-1.5 border border-rose-500/20 bg-rose-500/10 rounded">Hapus</button>
       </div>
     )},
@@ -125,6 +188,44 @@ export default function PromosiPage() {
         <div className="text-center py-20 text-slate-400 font-medium">⚙️ Memuat data...</div>
       ) : (
         <DataTable data={promotions} columns={columns} />
+      )}
+
+      {/* Broadcast Type Picker Modal */}
+      {broadcastModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="p-5 border-b border-slate-800 flex justify-between items-center">
+              <h2 className="text-lg font-black text-white">📢 Broadcast Promosi</h2>
+              <button onClick={() => setBroadcastModal(null)} className="text-slate-400 hover:text-white text-xl font-bold">✕</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-slate-300 text-sm font-bold">{broadcastModal.title}</p>
+              <p className="text-slate-500 text-xs">Pilih target penerima broadcast promosi ini:</p>
+              <div className="space-y-2">
+                {[
+                  { value: 'users', label: '👤 Semua User (Personal Chat)' },
+                  { value: 'groups', label: '👥 Semua Grup Aktif' },
+                  { value: 'both', label: '🌐 User + Grup (Semua)' }
+                ].map(opt => (
+                  <label key={opt.value} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition ${broadcastType === opt.value ? 'border-purple-500 bg-purple-500/10' : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'}`}>
+                    <input type="radio" value={opt.value} checked={broadcastType === opt.value} onChange={() => setBroadcastType(opt.value)} className="accent-purple-500" />
+                    <span className="text-sm font-bold text-slate-200">{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="p-5 border-t border-slate-800 flex justify-end gap-3">
+              <button onClick={() => setBroadcastModal(null)} className="px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 font-bold text-sm transition">Batal</button>
+              <button
+                onClick={handleBroadcast}
+                disabled={broadcastLoading}
+                className="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold text-sm transition disabled:opacity-50 shadow-[0_4px_15px_rgba(147,51,234,0.4)]"
+              >
+                {broadcastLoading ? '⏳ Memproses...' : '🚀 Mulai Broadcast'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {modalOpen && (

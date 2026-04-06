@@ -8,6 +8,7 @@ const ticketSchema = new mongoose.Schema({
   status: { type: String, enum: ['open', 'closed'], default: 'open' },
   lastMessageAt: { type: Date, default: Date.now },
   closedAt: { type: Date },
+  adminNotified: { type: Boolean, default: false }, // Kalau sudah dinotif, jangan notif lagi
   createdAt: { type: Date, default: Date.now }
 });
 

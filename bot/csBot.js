@@ -81,24 +81,29 @@ module.exports = function startCsBot() {
         imageFileId
       });
 
-      // Notifikasi Admin via Teleram (Jika ada Admin terdaftar)
-      try {
-        const settingsService = require('../api/services/settingsService');
-        const settings = settingsService.getSettings();
-        const notificationTelegramId = settings?.admin?.notificationTelegramId;
-        
-        if (notificationTelegramId) {
-          const mainBotToken = process.env.BOT_TOKEN;
-          // Kirim lewat api main bot
-          const msgText = type === 'image' ? `[📷 Gambar] ${content || ''}` : content;
-          await axios.post(`https://api.telegram.org/bot${mainBotToken}/sendMessage`, {
-            chat_id: notificationTelegramId,
-            text: `🔔 *Tiket Baru Diterima!*\n\n📋 Ref: \`${ticket.referenceId}\`\n👤 User: ${ticket.firstName || ticket.username || 'Pemain'}\n🆔 ID: \`${telegramId}\`\n💬 Pesan: ${msgText}`,
-            parse_mode: 'Markdown'
-          });
+      // Notifikasi Admin via Telegram — HANYA SEKALI per tiket (saat pesan pertama masuk)
+      if (!ticket.adminNotified) {
+        try {
+          const settingsService = require('../api/services/settingsService');
+          const settings = settingsService.getSettings();
+          const notificationTelegramId = settings?.admin?.notificationTelegramId;
+          
+          if (notificationTelegramId) {
+            const mainBotToken = process.env.BOT_TOKEN;
+            const msgText = type === 'image' ? `[📷 Gambar] ${content || ''}` : content;
+            await axios.post(`https://api.telegram.org/bot${mainBotToken}/sendMessage`, {
+              chat_id: notificationTelegramId,
+              text: `🔔 *Tiket Baru Diterima!*\n\n📋 Ref: \`${ticket.referenceId}\`\n👤 User: ${ticket.firstName || ticket.username || 'Pemain'}\n🆔 ID: \`${telegramId}\`\n💬 Pesan: ${msgText}`,
+              parse_mode: 'Markdown'
+            });
+          }
+
+          // Tandai tiket sudah dinotif agar tidak spam
+          ticket.adminNotified = true;
+          await ticket.save();
+        } catch (e) {
+          // Abaikan jika notif gagal
         }
-      } catch (e) {
-        // Abaikan notif telegram error
       }
 
       // Internal ping ke Server API Socket.io buat memancarkan notifikasi realtime ke Dashboard Admin
