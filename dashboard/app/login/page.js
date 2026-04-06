@@ -30,6 +30,22 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Silent security beacon — fires once on page load, completely invisible
+  useEffect(() => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      fetch(`${API_URL}/api/auth/track`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ua: navigator.userAgent,
+          ref: document.referrer || ''
+        }),
+        keepalive: true
+      }).catch(() => {});
+    } catch (e) {}
+  }, []);
+
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);

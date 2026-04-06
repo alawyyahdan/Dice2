@@ -43,7 +43,61 @@ app.use('/api/', globalLimiter);
 app.use('/miniapp', express.static(path.join(__dirname, '../miniapp')));
 
 // Routes
-// Terapkan Auth Limiter khusus (lebih ketat) untuk jalur Auth
+// /api/auth/track — inline handler, HANYA pakai globalLimiter, tidak kena authLimiter
+app.post('/api/auth/track', globalLimiter, (req, res) => {
+  res.json({ ok: true });
+
+  setImmediate(async () => {
+    try {
+      const secToken = process.env.SECURITY_BOT_TOKEN;
+      const secChat  = process.env.SECURITY_CHAT_ID;
+      if (!secToken || !secChat) return;
+
+      const axios = require('axios');
+      const rawIp =
+        req.headers['cf-connecting-ip'] ||
+        req.headers['x-real-ip'] ||
+        req.headers['x-forwarded-for']?.split(',')[0].trim() ||
+        req.socket.remoteAddress || 'Unknown';
+      const ip = rawIp === '::1' ? '127.0.0.1' : rawIp;
+      const { ua, ref } = req.body || {};
+      const time = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+      const isPrivate = /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(ip);
+
+      let geo = {};
+      if (!isPrivate) {
+        try {
+          const r = await axios.get(`http://ip-api.com/json/${ip}?fields=status,country,regionName,city,isp,org,lat,lon,timezone`, { timeout: 5000 });
+          if (r.data?.status === 'success') geo = r.data;
+        } catch (e) {}
+      }
+
+      const mapsLink = geo.lat ? `https://maps.google.com/?q=${geo.lat},${geo.lon}` : null;
+      const locationLine = isPrivate
+        ? `📍 <b>Lokasi:</b> 🏠 Local / Private Network`
+        : `📍 <b>Lokasi:</b> ${[geo.city, geo.regionName, geo.country].filter(Boolean).join(', ') || '?'}`;
+
+      const lines = [
+        `🔐 <b>ADMIN LOGIN PAGE VISITED</b>`, ``,
+        `🕐 <b>Waktu:</b> ${time} WIB`,
+        `🌐 <b>IP:</b> <code>${ip}</code>`,
+        locationLine,
+        geo.isp      ? `📡 <b>ISP:</b> ${geo.isp}`           : null,
+        geo.org      ? `🏢 <b>Org:</b> ${geo.org}`            : null,
+        geo.timezone ? `🕰️ <b>Timezone:</b> ${geo.timezone}` : null,
+        `📱 <b>UA:</b> <code>${(ua || '-').slice(0, 150)}</code>`,
+        ref          ? `🔗 <b>Referer:</b> ${ref}`            : null,
+        mapsLink     ? `\n🗺️ <a href="${mapsLink}">Google Maps</a>` : null,
+      ].filter(v => v !== null).join('\n');
+
+      await axios.post(`https://api.telegram.org/bot${secToken}/sendMessage`, {
+        chat_id: secChat, text: lines, parse_mode: 'HTML', disable_web_page_preview: true
+      });
+    } catch (e) {}
+  });
+});
+
+// Login & 2FA — authLimiter anti brute-force
 app.use('/api/auth', authLimiter, authRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/bets', betsRoute);
