@@ -93,7 +93,6 @@ router.patch('/:id/approve', auth, async (req, res) => {
       const config = await Setting.findOne();
       if (config.admin && config.admin.notificationTelegramId && process.env.NOTIFY_BOT_TOKEN) {
         try {
-          const axios = require('axios');
           await axios.post(`https://api.telegram.org/bot${process.env.NOTIFY_BOT_TOKEN}/editMessageText`, {
             chat_id: config.admin.notificationTelegramId,
             message_id: wd.notifyMessageId,
@@ -136,7 +135,6 @@ router.patch('/:id/reject', auth, async (req, res) => {
       const config = await Setting.findOne();
       if (config.admin && config.admin.notificationTelegramId && process.env.NOTIFY_BOT_TOKEN) {
         try {
-          const axios = require('axios');
           await axios.post(`https://api.telegram.org/bot${process.env.NOTIFY_BOT_TOKEN}/editMessageText`, {
             chat_id: config.admin.notificationTelegramId,
             message_id: wd.notifyMessageId,

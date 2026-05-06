@@ -1,8 +1,8 @@
 const { calculateBet } = require('../utils/diceCalculator');
 const User = require('../../api/models/User');
 const Bet = require('../../api/models/Bet');
-const crypto = require('crypto');
 const settingsService = require('../../api/services/settingsService');
+const { sleep, roundTo2 } = require('../utils/helpers');
 
 // Listener in-memory: Map<telegramId, { chatId, collected: [], timeout, queue: [], processing }>
 const waitingRolls = new Map();
@@ -118,10 +118,9 @@ async function processResult(ctx, bet, dice, rolledBy) {
   const { getMatchingCategories } = require('../utils/diceCalculator');
   const categories = getMatchingCategories(dice);
 
-  const r2 = (n) => Number(Number(n).toFixed(2));
-  const updateOp = { $inc: { turnoverRequired: -bet.betAmount, turnover: bet.betAmount, cashback: r2(bet.betAmount * 0.01) } };
+  const updateOp = { $inc: { turnoverRequired: -bet.betAmount, turnover: bet.betAmount, cashback: roundTo2(bet.betAmount * 0.01) } };
   if (result.isWin) {
-    updateOp.$inc.balance = r2(result.payout - bet.betAmount);
+    updateOp.$inc.balance = roundTo2(result.payout - bet.betAmount);
   } else {
     updateOp.$inc.balance = -bet.betAmount;
   }
@@ -176,10 +175,6 @@ async function processResult(ctx, bet, dice, rolledBy) {
   } else {
     await ctx.reply(textMsg, { parse_mode: 'HTML' });
   }
-}
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 module.exports = { registerDiceHandler, waitingRolls, handleUserDiceRoll };

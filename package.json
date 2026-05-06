@@ -7,9 +7,20 @@
     "api"
   ],
   "scripts": {
-    "dev": "npx concurrently \"cd api && npm run dev\" \"cd bot && npm run dev\" \"cd dashboard && npm run dev\"",
+    "dev": "concurrently -n api,bot,dash -c blue,green,magenta \"npm run dev:api\" \"npm run dev:bot\" \"npm run dev:dash\"",
+    "dev:api": "cd api && npx nodemon server.js",
+    "dev:bot": "cd bot && npx nodemon index.js",
+    "dev:dash": "cd dashboard && node server.js",
+    "start": "concurrently -n api,bot,dash \"npm run start:api\" \"npm run start:bot\" \"npm run start:dash\"",
+    "start:api": "cd api && node server.js",
+    "start:bot": "cd bot && node index.js",
+    "start:dash": "cd dashboard && NODE_ENV=production node server.js",
+    "install:all": "npm install && cd dashboard && npm install",
     "start:pm2": "pm2 start ecosystem.config.js",
     "stop:pm2": "pm2 stop ecosystem.config.js",
     "logs:pm2": "pm2 logs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }

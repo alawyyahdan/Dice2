@@ -32,7 +32,7 @@ router.patch('/adjust', auth, async (req, res) => {
       { new: true }
     );
 
-    res.json({ updatedBalance: user.balance, user });
+    res.json({ updatedBalance: updatedUser.balance, user: updatedUser });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

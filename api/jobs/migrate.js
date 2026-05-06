@@ -102,10 +102,9 @@ async function runMigrations() {
       referenceId: 'TEMP',
       telegramId: '0',
     });
-    const ticketTemplatObj = ticketTemplate.toObject({ versionKey: false });
-    const ticketFlat = flattenObject(ticketTemplatObj);
+    const ticketTemplateObj = ticketTemplate.toObject({ versionKey: false });
+    const ticketFlat = flattenObject(ticketTemplateObj);
 
-    let ticketPatch = {};
     for (const [dotPath, defaultVal] of Object.entries(ticketFlat)) {
       // Field yang harus dibackfill (bukan dinamic per-tiket)
       const backfillableFields = ['adminNotified', 'status'];

@@ -2,7 +2,6 @@ let ioInstance = null;
 
 function initSocket(server) {
   const { Server } = require('socket.io');
-  const Setting = require('../models/Setting');
 
   ioInstance = new Server(server, {
     cors: {

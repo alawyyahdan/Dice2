@@ -1,38 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const crypto = require('crypto');
 const User = require('../models/User');
 const Withdraw = require('../models/Withdraw');
 const Bet = require('../models/Bet');
-
-// Verifikasi Telegram initData menggunakan HMAC-SHA256
-function verifyTelegramInitData(initData) {
-
-  try {
-    const urlParams = new URLSearchParams(initData);
-    const hash = urlParams.get('hash');
-    urlParams.delete('hash');
-
-    const dataCheckString = Array.from(urlParams.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${k}=${v}`)
-      .join('\n');
-
-    const secretKey = crypto
-      .createHmac('sha256', 'WebAppData')
-      .update(process.env.BOT_TOKEN)
-      .digest();
-
-    const expectedHash = crypto
-      .createHmac('sha256', secretKey)
-      .update(dataCheckString)
-      .digest('hex');
-
-    return hash === expectedHash;
-  } catch {
-    return false;
-  }
-}
+const { verifyTelegramInitData } = require('../utils/verifyTelegram');
 
 // GET /api/miniapp/user-info?telegramId=xxx&initData=xxx
 router.get('/user-info', async (req, res) => {
@@ -141,7 +112,7 @@ router.get('/bets', async (req, res) => {
 // POST /api/miniapp/withdraw
 router.post('/withdraw', async (req, res) => {
   try {
-    const { initData, telegramId, amount, bankName, accountNumber, accountName } = req.body;
+    const { initData, telegramId, bankName, accountNumber, accountName } = req.body;
 
     // Verifikasi initData dari Telegram
     if (!verifyTelegramInitData(initData)) {
@@ -201,16 +172,16 @@ router.post('/withdraw', async (req, res) => {
 
     // BUGFIX: Jika provider_type sitranfer, dan rule = 'all', auto-WD menyala berapapun nominalnya untuk menghabiskan poin.
     // Jika rule = 'free', auto-WD hanya berjalan jika nominal <= autoWdLimit.
-    let isAutoPgo = false;
+    let isAutoWithdraw = false;
     if (withdrawConfig.providerType === 'sitranfer') {
       if (withdrawConfig.rule === 'all') {
-        isAutoPgo = true;
+        isAutoWithdraw = true;
       } else {
-        isAutoPgo = nominal <= (withdrawConfig.autoWdLimit || 50);
+        isAutoWithdraw = nominal <= (withdrawConfig.autoWdLimit || 50);
       }
     }
 
-    if (isAutoPgo) {
+    if (isAutoWithdraw) {
       try {
         const idrNominal = nominal * 1000;
         const bankTargetCode = isValidBank ? isValidBank.code : bankName;

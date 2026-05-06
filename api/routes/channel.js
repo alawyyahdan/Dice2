@@ -10,15 +10,7 @@ const FormData = require('form-data');
 
 const getCSBotToken = () => process.env.CS_BOT_TOKEN;
 
-const toHtml = (t) => {
-  if (!t) return '';
-  return t
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-    .replace(/~~(.*?)~~/g, '<s>$1</s>')
-    .replace(/_(.*?)_/g, '<i>$1</i>')
-    .replace(/`(.*?)`/g, '<code>$1</code>');
-};
+const { toHtml } = require('../utils/toHtml');
 
 // Helper to get channel ID from Settings
 async function getChannelId() {
@@ -68,7 +60,6 @@ router.post('/send', [auth, upload.single('image')], async (req, res) => {
 
     const { content } = req.body;
     if (!content && !req.file) {
-      if (req.file) try { fs.unlinkSync(req.file.path); } catch(e){}
       return res.status(400).json({ error: 'Pesan atau gambar tidak boleh kosong.' });
     }
 

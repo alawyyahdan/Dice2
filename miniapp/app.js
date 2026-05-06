@@ -6,7 +6,6 @@ tg.expand();
 tg.setHeaderColor('#0f172a');
 tg.setBackgroundColor('#0f172a');
 
-const API_URL = ''; // Autodetect origin
 let currentInitData = tg.initData;
 
 let userInfo = null;
@@ -39,7 +38,7 @@ async function loadPromosi() {
   detailContainer.style.display = 'none';
   
   try {
-    const res = await fetch(`${API_URL}/api/promotions/active`);
+    const res = await fetch(`/api/promotions/active`);
     const data = await res.json();
     if (!data.promotions || data.promotions.length === 0) {
       listContainer.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-weight:bold;">Belum ada promosi aktif saat ini.</div>';
@@ -90,25 +89,25 @@ function showPromosiDetail(encodedPromo) {
 async function loadGuide() {
   const container = document.getElementById('guide-table-container');
   try {
-    const res = await fetch(`${API_URL}/api/settings/public`);
+    const res = await fetch(`/api/settings/public`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
 
-    const O = data.odds;
-    const B = data.bounds;
+    const odds = data.odds;
+    const bounds = data.bounds;
 
     const list = [
-      { code: 'B / K', name: 'Besar / Kecil', odds: O.standard, max: B.maxStandard },
-      { code: 'GA / GE', name: 'Ganjil / Genap', odds: O.standard, max: B.maxStandard },
-      { code: 'BGA / KGE', name: 'Besar Gnjil / Kcil Gnap', odds: O.BGA_KGE, max: B.maxKombinasi },
-      { code: 'BGE / KGA', name: 'Besar Genap / Kcil Gnjil', odds: O.BGE_KGA, max: B.maxKombinasi },
-      { code: 'J4/J17', name: 'Jumlah Dadu 4 / 17', odds: O.J4_17, max: B.maxJ4_17 },
-      { code: 'T', name: 'Triple Sembarang', odds: O.T, max: B.maxT },
-      { code: 'L', name: 'Lurus (ex: 2,3,4)', odds: O.L, max: B.maxL },
-      { code: 'P', name: 'Pasangan (2 Kembar)', odds: O.P, max: B.maxP },
-      { code: 'TS', name: 'Triple Spesifik (ex: 5,5,5)', odds: O.TS, max: B.maxTS },
-      { code: 'N / H', name: 'Naga / Harimau', odds: O.N_H, max: B.maxTie },
-      { code: 'S', name: 'Seri', odds: O.S, max: B.maxTie },
+      { code: 'B / K', name: 'Besar / Kecil', odds: odds.standard, max: bounds.maxStandard },
+      { code: 'GA / GE', name: 'Ganjil / Genap', odds: odds.standard, max: bounds.maxStandard },
+      { code: 'BGA / KGE', name: 'Besar Gnjil / Kcil Gnap', odds: odds.BGA_KGE, max: bounds.maxKombinasi },
+      { code: 'BGE / KGA', name: 'Besar Genap / Kcil Gnjil', odds: odds.BGE_KGA, max: bounds.maxKombinasi },
+      { code: 'J4/J17', name: 'Jumlah Dadu 4 / 17', odds: odds.J4_17, max: bounds.maxJ4_17 },
+      { code: 'T', name: 'Triple Sembarang', odds: odds.T, max: bounds.maxT },
+      { code: 'L', name: 'Lurus (ex: 2,3,4)', odds: odds.L, max: bounds.maxL },
+      { code: 'P', name: 'Pasangan (2 Kembar)', odds: odds.P, max: bounds.maxP },
+      { code: 'TS', name: 'Triple Spesifik (ex: 5,5,5)', odds: odds.TS, max: bounds.maxTS },
+      { code: 'N / H', name: 'Naga / Harimau', odds: odds.N_H, max: bounds.maxTie },
+      { code: 'S', name: 'Seri', odds: odds.S, max: bounds.maxTie },
     ];
 
     let html = `<div style="overflow-x:auto; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; margin-top: 10px;">
@@ -155,7 +154,7 @@ async function init() {
 
   // Load User Data
   try {
-    const res = await fetch(`${API_URL}/api/miniapp/user-info?telegramId=${currentUser.id}&initData=${encodeURIComponent(currentInitData)}&photoUrl=${encodeURIComponent(currentUser.photo_url || '')}`);
+    const res = await fetch(`/api/miniapp/user-info?telegramId=${currentUser.id}&initData=${encodeURIComponent(currentInitData)}&photoUrl=${encodeURIComponent(currentUser.photo_url || '')}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan sistem');
 
@@ -192,7 +191,7 @@ let currentMaxDeposit = 50000000;
 
 async function loadPaymentMethods() {
   try {
-    const res = await fetch(`${API_URL}/api/deposit/methods`);
+    const res = await fetch(`/api/deposit/methods`);
     const data = await res.json();
     currentProviderType = data.providerType;
     currentMinDeposit = data.minDeposit || 10000;
@@ -414,7 +413,7 @@ async function addBankAccount() {
   tg.MainButton.setText('Menyimpan rekening...').showProgress().show();
 
   try {
-    const res = await fetch(`${API_URL}/api/miniapp/add-bank`, {
+    const res = await fetch(`/api/miniapp/add-bank`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ initData: currentInitData, telegramId: String(currentUser.id), bankName, accountNumber, accountName })
     });
@@ -462,7 +461,7 @@ async function submitWithdraw() {
 
   try {
     const bank = userInfo.banks[selectedBankIndex];
-    const res = await fetch(`${API_URL}/api/miniapp/withdraw`, {
+    const res = await fetch(`/api/miniapp/withdraw`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         initData: currentInitData, telegramId: String(currentUser.id), amount,
@@ -504,7 +503,7 @@ async function submitDeposit() {
   btn.innerText = 'MEMPROSES...'; btn.disabled = true;
 
   try {
-    const res = await fetch(`${API_URL}/api/deposit/create`, {
+    const res = await fetch(`/api/deposit/create`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         initData: currentInitData, telegramId: String(currentUser.id), amount, paymentMethod: method, promoId
@@ -634,35 +633,16 @@ async function confirmManualTransfer() {
   document.getElementById('depo-amount').value = '';
 }
 
-// (Old cancel functions removed)
-
-async function sendQRToTele() {
-  const btn = document.getElementById('btn-kirim-tele');
+async function sendToTele(btnId, successMsg, extraBody = {}) {
+  const btn = document.getElementById(btnId);
   const oldText = btn.innerText;
   btn.innerText = 'Mengirim...'; btn.disabled = true;
   try {
-    const res = await fetch(`${API_URL}/api/deposit/send-bayar`, {
+    const res = await fetch(`/api/deposit/send-bayar`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: currentInitData, telegramId: String(currentUser.id), referenceId: currentCharge.referenceId })
+      body: JSON.stringify({ initData: currentInitData, telegramId: String(currentUser.id), referenceId: currentCharge.referenceId, ...extraBody })
     });
-    if (res.ok) alert('✅ QR berhasil dikirim ke chat Bot!');
-    else throw new Error();
-  } catch (e) {
-    alert('❌ Gagal kirim QR ke bot');
-  }
-  btn.innerText = oldText; btn.disabled = false;
-}
-
-async function sendManualToTele() {
-  const btn = document.getElementById('btn-kirim-tele-manual');
-  const oldText = btn.innerText;
-  btn.innerText = 'Mengirim...'; btn.disabled = true;
-  try {
-    const res = await fetch(`${API_URL}/api/deposit/send-bayar`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: currentInitData, telegramId: String(currentUser.id), referenceId: currentCharge.referenceId, isManual: true })
-    });
-    if (res.ok) alert('✅ Instruksi Manual berhasil dikirim ke chat Bot!');
+    if (res.ok) alert(successMsg);
     else throw new Error();
   } catch (e) {
     alert('❌ Gagal kirim ke bot');
@@ -670,10 +650,18 @@ async function sendManualToTele() {
   btn.innerText = oldText; btn.disabled = false;
 }
 
+function sendQRToTele() {
+  sendToTele('btn-kirim-tele', '✅ QR berhasil dikirim ke chat Bot!');
+}
+
+function sendManualToTele() {
+  sendToTele('btn-kirim-tele-manual', '✅ Instruksi Manual berhasil dikirim ke chat Bot!', { isManual: true });
+}
+
 async function checkPaymentStatusSilent() {
   if (!currentUser || !currentCharge) return;
   try {
-    const res = await fetch(`${API_URL}/api/deposit/history?telegramId=${currentUser.id}&initData=${encodeURIComponent(currentInitData)}`);
+    const res = await fetch(`/api/deposit/history?telegramId=${currentUser.id}&initData=${encodeURIComponent(currentInitData)}`);
     const data = await res.json();
     const dep = data.deposits.find(d => d.referenceId === currentCharge.referenceId);
     if (dep && dep.status === 'success') {
@@ -713,7 +701,7 @@ async function loadHistory() {
   const container = document.getElementById('bets-container');
   container.innerHTML = '<div class="loading">Memuat riwayat dadu...</div>';
   try {
-    const res = await fetch(`${API_URL}/api/miniapp/bets?telegramId=${currentUser.id}&initData=${encodeURIComponent(currentInitData)}`);
+    const res = await fetch(`/api/miniapp/bets?telegramId=${currentUser.id}&initData=${encodeURIComponent(currentInitData)}`);
     const data = await res.json();
     if (!data.bets || data.bets.length === 0) {
       container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-weight:bold;">Belum ada taruhan dimainkan.</div>';
@@ -787,7 +775,7 @@ async function loadDepoHistory() {
   if (!container) return;
   container.innerHTML = '<div class="loading">Memuat...</div>';
   try {
-    const res = await fetch(`${API_URL}/api/deposit/history?telegramId=${currentUser.id}&initData=${encodeURIComponent(currentInitData)}`);
+    const res = await fetch(`/api/deposit/history?telegramId=${currentUser.id}&initData=${encodeURIComponent(currentInitData)}`);
     const data = await res.json();
     const all = data.deposits || [];
     window.currentHistoryDeposits = all;
@@ -842,7 +830,7 @@ async function loadWdHistory() {
   if (!container) return;
   container.innerHTML = '<div class="loading">Memuat...</div>';
   try {
-    const res = await fetch(`${API_URL}/api/miniapp/withdraw-history?telegramId=${currentUser.id}&initData=${encodeURIComponent(currentInitData)}`);
+    const res = await fetch(`/api/miniapp/withdraw-history?telegramId=${currentUser.id}&initData=${encodeURIComponent(currentInitData)}`);
     const data = await res.json();
     const all = data.withdraws || [];
     wdHistTotal = all.length;
@@ -883,24 +871,6 @@ function wdHistNext() { const t = Math.ceil(wdHistTotal / WD_PER_PAGE); if (wdHi
 
 
 
-
-async function cancelHistoryDeposit(refId) {
-  if (!confirm('Yakin ingin membatalkan deposit ini?')) return;
-  try {
-    const res = await fetch(`${API_URL}/api/deposit/cancel`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: currentInitData, referenceId: refId })
-    });
-    if (res.ok) {
-      alert('Deposit berhasil dibatalkan.');
-      loadDepoHistory();
-    } else {
-      alert('Gagal membatalkan deposit.');
-    }
-  } catch (e) {
-    console.error('Cancel history failed', e);
-  }
-}
 
 function showError(id, msg) {
   const el = document.getElementById(id);
@@ -963,7 +933,7 @@ function formatTime(ms) {
 
 async function autoCancelDeposit(refId, silent = false) {
   try {
-    const res = await fetch(`${API_URL}/api/deposit/cancel`, {
+    const res = await fetch(`/api/deposit/cancel`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ initData: currentInitData, referenceId: refId })
     });
@@ -989,7 +959,7 @@ async function loadLeaderboard(filter) {
   container.innerHTML = '<div class="loading">Memuat leaderboard...</div>';
 
   try {
-    const res = await fetch(`${API_URL}/api/leaderboard/public?filter=${filter}&initData=${encodeURIComponent(currentInitData)}`);
+    const res = await fetch(`/api/leaderboard/public?filter=${filter}&initData=${encodeURIComponent(currentInitData)}`);
     const data = await res.json();
 
     if (!data.leaderboard || data.leaderboard.length === 0) {

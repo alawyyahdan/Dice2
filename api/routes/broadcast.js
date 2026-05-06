@@ -10,15 +10,7 @@ const axios = require('axios');
 const FormData = require('form-data');
 const { getIo } = require('../socket');
 
-const toHtml = (t) => {
-  if (!t) return '';
-  return t
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-    .replace(/~~(.*?)~~/g, '<s>$1</s>')
-    .replace(/_(.*?)_/g, '<i>$1</i>')
-    .replace(/`(.*?)`/g, '<code>$1</code>');
-};
+const { toHtml } = require('../utils/toHtml');
 
 router.get('/', auth, async (req, res) => {
   try {

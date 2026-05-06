@@ -24,9 +24,9 @@ export default function AnalyticsPage() {
 
   if (loading) return <div className="text-center py-20 text-slate-500 font-bold text-2xl animate-pulse">Memuat Analytics...</div>;
 
-  const maxDeposit = data?.dailyVolume?.length > 0 ? Math.max(...data.dailyVolume.map(d => d.deposit), 100) : 100;
-  const maxWithdraw = data?.dailyVolume?.length > 0 ? Math.max(...data.dailyVolume.map(d => d.withdraw), 100) : 100;
-  const maxAxis = Math.max(maxDeposit, maxWithdraw);
+  const maxAxis = data?.dailyVolume?.length > 0
+    ? Math.max(...data.dailyVolume.map(d => Math.max(d.deposit, d.withdraw)), 100)
+    : 100;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">

@@ -10,18 +10,8 @@ const fs = require('fs');
 const axios = require('axios');
 const FormData = require('form-data');
 
-// Helper convert markdown ke HTML (Telegram & Dashboard)
-// Gunakan non-greedy (.*?) biar bold gak amblas sampe baris bawah
-const toHtml = (t) => {
-  if (!t) return '';
-  return t
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') // escape
-    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-    .replace(/~~(.*?)~~/g, '<s>$1</s>')
-    .replace(/_(.*?)_/g, '<i>$1</i>')
-    .replace(/`(.*?)`/g, '<code>$1</code>')
-    .replace(/\n/g, '<br/>');
-};
+const { toHtml: _toHtml } = require('../utils/toHtml');
+const toHtml = (t) => _toHtml(t, { convertNewlines: true });
 
 // 1. Ambil list tiket
 router.get('/tickets', auth, async (req, res) => {

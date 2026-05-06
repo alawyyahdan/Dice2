@@ -93,7 +93,7 @@ export default function ServerStatus() {
             <div className="flex justify-between items-center">
               <p className="text-[10px] font-medium text-slate-400 truncate max-w-[70%]">{m.sub}</p>
               <p className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
-                <span className={`w-1 h-1 rounded-full ${m.color.replace('bg-', 'bg-')} shadow-[0_0_5px_currentColor]`}></span>
+                <span className={`w-1 h-1 rounded-full ${m.color} shadow-[0_0_5px_currentColor]`}></span>
                 {m.status}
               </p>
             </div>

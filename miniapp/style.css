@@ -5,7 +5,6 @@
   --text: #f8fafc;
   --text-muted: #94a3b8;
   --primary: #3b82f6;
-  --primary-hover: #2563eb;
   --danger: #ef4444;
   --success: #10b981;
   --warning: #f59e0b;
@@ -23,14 +22,6 @@ body {
 }
 
 h1, h2, h3 { color: var(--text); font-weight: 900; }
-
-.header-title {
-  text-align: center;
-  font-size: 1.8rem;
-  margin-bottom: 20px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
 
 /* Tabs */
 .tabs {
@@ -121,8 +112,6 @@ h1, h2, h3 { color: var(--text); font-weight: 900; }
 .btn-success { background: var(--success); color: #fff; box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3); }
 
 /* Bank List & Selector */
-.bank-option { padding: 12px; border: 2px solid var(--border); border-radius: 10px; margin-bottom: 8px; font-weight: bold; display: flex; justify-content: space-between; background: var(--bg); }
-.bank-selected { border-color: var(--success); background: rgba(16, 185, 129, 0.1); }
 #add-bank-form { display: none; margin-top: 16px; padding-top: 16px; border-top: 2px dashed var(--border); }
 
 /* History Bets */
@@ -173,13 +162,6 @@ h1, h2, h3 { color: var(--text); font-weight: 900; }
 .success-msg .icon { font-size: 4rem; margin-bottom: 16px; }
 .loading { text-align: center; padding: 40px; color: var(--text-muted); font-weight: bold; font-size: 1.2rem; }
 
-/* Modal Alert Deposit */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 200; }
-.modal-overlay.active { display: flex; }
-.modal-card { background: var(--card); border: 2px solid var(--border); border-radius: 20px; padding: 24px; max-width: 90%; text-align: center; }
-.modal-card h2 { font-size: 1.5rem; margin-bottom: 12px; color: var(--success); }
-.modal-card p { font-size: 1.1rem; color: var(--text); font-weight: 500; line-height: 1.5; margin-bottom: 20px; }
-.code-box { background: var(--bg); border: 1px dashed var(--text-muted); color: var(--primary); font-family: monospace; font-size: 1.3rem; font-weight: bold; padding: 12px; border-radius: 8px; margin-bottom: 20px; }
 /* Payment Overlay */
 .payment-overlay {
   position: fixed;

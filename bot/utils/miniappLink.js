@@ -45,4 +45,4 @@ function miniAppButton(bot, label, tab = '') {
   return { text: label, url };
 }
 
-module.exports = { getMiniAppLink, miniAppButton };
+module.exports = { miniAppButton };

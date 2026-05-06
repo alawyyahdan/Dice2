@@ -1,28 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const crypto = require('crypto');
 const axios = require('axios');
 const User = require('../models/User');
 const Deposit = require('../models/Deposit');
 const Setting = require('../models/Setting');
 const paymentService = require('../services/paymentService');
 const requireAdmin = require('../middlewares/authMiddleware');
-
-// Helper verifikasi Telegram miniapp
-function verifyTelegramInitData(initData) {
-  try {
-    const urlParams = new URLSearchParams(initData);
-    const hash = urlParams.get('hash');
-    urlParams.delete('hash');
-    const dataCheckString = Array.from(urlParams.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${k}=${v}`)
-      .join('\n');
-    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(process.env.BOT_TOKEN).digest();
-    const expectedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
-    return hash === expectedHash;
-  } catch { return false; }
-}
+const { verifyTelegramInitData } = require('../utils/verifyTelegram');
 
 // Helper Bot API Telegram
 async function sendTelegramMessage(chatId, text) {
@@ -167,7 +151,6 @@ router.post('/create', async (req, res) => {
       console.log('[NOTIFY DEBUG DEPOSIT] notifyId:', config.admin?.notificationTelegramId, '| token:', !!process.env.NOTIFY_BOT_TOKEN);
       if (config.admin && config.admin.notificationTelegramId && process.env.NOTIFY_BOT_TOKEN) {
         try {
-          const axios = require('axios');
           const message = `🔔 *INFO DEPOSIT MANUAL MUNCUL!*\n\n👤 User: @${user.username || telegramId}\n💰 Jumlah: *${amount} pt* (Rp ${finalIdrAmount.toLocaleString('id-ID')})\n🏦 Bank: ${paymentMethod}\n💳 Rekening: ${bankInfo.accountNumber || '-'} A/N ${bankInfo.accountName || '-'}\n\nSilakan validasi di Dashboard Admin!`;
           
           const reply_markup = {

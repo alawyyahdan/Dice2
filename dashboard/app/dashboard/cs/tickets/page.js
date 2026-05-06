@@ -1,30 +1,10 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
+import { getToken } from '@/lib/auth';
+import { EMOJI_LIST, FORMAT_TOOLS, renderMarkdown } from '@/lib/constants';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
-// Convert markdown ke HTML untuk display di bubble chat
-// Harus sync dengan toHtml di backend
-function renderMarkdown(text) {
-  if (!text) return '';
-  // Escape HTML characters to prevent XSS and accidental tag breaking
-  let escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  
-  return escaped
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/~~(.*?)~~/g, '<s>$1</s>')
-    .replace(/_(.*?)_/g, '<em>$1</em>')
-    .replace(/`(.*?)`/g, '<code class="bg-black/20 px-1 rounded text-xs font-mono">$1</code>')
-    .replace(/\n/g, '<br/>');
-}
-
-// Helper to get auth token from cookie
-function getToken() {
-  return document.cookie.match(/(?:^|; )admin_token=([^;]*)/)?.[1]
-    ? decodeURIComponent(document.cookie.match(/(?:^|; )admin_token=([^;]*)/)[1])
-    : null;
-}
 
 async function apiFetch(path, opts = {}) {
   const token = getToken();
@@ -42,22 +22,6 @@ async function apiFetch(path, opts = {}) {
   }
   return res.json();
 }
-
-// Emoji data
-const EMOJI_LIST = [
-  '😊','😂','🤣','❤️','😍','🙏','😭','😘','😅','😁',
-  '🔥','✅','👍','🎉','💪','😎','🤔','😢','🥰','😡',
-  '💰','🎲','🏆','📢','⚠️','❌','🚀','💬','📱','🔔',
-  '👋','🤝','💯','✨','🌟','💎','📊','📈','🎯','🛡️'
-];
-
-// Format toolbar config
-const FORMAT_TOOLS = [
-  { label: 'B', title: 'Bold', wrap: ['**', '**'], style: 'font-bold' },
-  { label: 'I', title: 'Italic', wrap: ['_', '_'], style: 'italic' },
-  { label: 'S', title: 'Strikethrough', wrap: ['~~', '~~'], style: 'line-through' },
-  { label: '<>', title: 'Code/Mono', wrap: ['`', '`'], style: 'font-mono text-xs' },
-];
 
 export default function TicketChat() {
   const [tickets, setTickets] = useState([]);

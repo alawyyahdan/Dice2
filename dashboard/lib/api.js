@@ -1,10 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { getToken } from './auth';
 
-function getToken() {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie.match(/(?:^|; )admin_token=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : null;
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 async function apiFetch(endpoint, options = {}) {
   const token = getToken();
@@ -17,7 +13,8 @@ async function apiFetch(endpoint, options = {}) {
     }
   });
 
-  if (res.status === 401) {
+  // Redirect ke login jika session expired (401) — KECUALI saat di endpoint login itu sendiri
+  if (res.status === 401 && !endpoint.startsWith('/api/auth/')) {
     if (typeof window !== 'undefined') {
       window.location.href = '/login';
     }
@@ -30,7 +27,6 @@ async function apiFetch(endpoint, options = {}) {
     if (!res.ok) throw new Error(data.error || 'API Error');
     return data;
   } else {
-    // API merespons HTML/teks (misal 404 dari Nginx atau Express server jika NEXT_PUBLIC_API_URL salah)
     const text = await res.text();
     console.error(`API response is NOT JSON (${res.status}): ${text.substring(0, 100)}...`);
     throw new Error(`Koneksi API Gagal (${res.status}). Pastikan NEXT_PUBLIC_API_URL benar di .env!`);
@@ -43,9 +39,6 @@ export const api = {
 
   getUsers: (params = {}) =>
     apiFetch(`/api/users?${new URLSearchParams(params)}`),
-
-  getUser: (telegramId) =>
-    apiFetch(`/api/users/${telegramId}`),
 
   getBets: (params = {}) =>
     apiFetch(`/api/bets?${new URLSearchParams(params)}`),
@@ -148,12 +141,4 @@ export const api = {
   updatePromotion: (id, data) => apiFetch(`/api/promotions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deletePromotion: (id) => apiFetch(`/api/promotions/${id}`, { method: 'DELETE' }),
 
-  // CS TICKETS
-  getTickets: (status) => apiFetch(`/api/cs/tickets?status=${status}`),
-  getTicketMessages: (id) => apiFetch(`/api/cs/tickets/${id}/messages`),
-  replyTicket: (id, text) => apiFetch(`/api/cs/tickets/${id}/reply`, { method: 'POST', body: JSON.stringify({ text }) }),
-  closeTicket: (id) => apiFetch(`/api/cs/tickets/${id}/close`, { method: 'POST' }),
-  
-  // CS BROADCAST
-  getBroadcasts: () => apiFetch('/api/broadcast'),
 };

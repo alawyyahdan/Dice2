@@ -3,9 +3,9 @@ const Bet = require('../../api/models/Bet');
 const User = require('../../api/models/User');
 const { calculateBet, getMatchingCategories } = require('../utils/diceCalculator');
 const { generateTrendImage } = require('../utils/trendGenerator');
-const { Markup } = require('telegraf');
 const settingsService = require('../../api/services/settingsService');
 const { miniAppButton } = require('../utils/miniappLink');
+const { sleep, roundTo2 } = require('../utils/helpers');
 
 const activeGroups = new Set();
 
@@ -174,12 +174,11 @@ function registerGroupGameManager(bot) {
             bet.rolledBy = 'bot';
             await bet.save();
 
-            const r2 = (n) => Number(Number(n).toFixed(2));
-            const updateOp = { $inc: { turnoverRequired: -bet.betAmount, turnover: bet.betAmount, cashback: r2(bet.betAmount * 0.01) } };
+            const updateOp = { $inc: { turnoverRequired: -bet.betAmount, turnover: bet.betAmount, cashback: roundTo2(bet.betAmount * 0.01) } };
             // Note: balance was DEDUCTED when bet was placed in group!
             // So we only add payout if they win
             if (result.isWin) {
-              updateOp.$inc.balance = r2(result.payout);
+              updateOp.$inc.balance = roundTo2(result.payout);
             }
             const updatedUser = await User.findByIdAndUpdate(user._id, updateOp, { new: true });
 
@@ -271,10 +270,6 @@ function registerGroupGameManager(bot) {
 
 function addActiveGroup(groupId) {
   activeGroups.add(String(groupId));
-}
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function isGroupRolling(groupId) {

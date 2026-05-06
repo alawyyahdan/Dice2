@@ -1,41 +1,10 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
+import { getToken } from '@/lib/auth';
+import { EMOJI_LIST, FORMAT_TOOLS, renderMarkdown } from '@/lib/constants';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
-// Emoji data
-const EMOJI_LIST = [
-  '😊','😂','🤣','❤️','😍','🙏','😭','😘','😅','😁',
-  '🔥','✅','👍','🎉','💪','😎','🤔','😢','🥰','😡',
-  '💰','🎲','🏆','📢','⚠️','❌','🚀','💬','📱','🔔',
-  '👋','🤝','💯','✨','🌟','💎','📊','📈','🎯','🛡️'
-];
-
-const FORMAT_TOOLS = [
-  { label: 'B', title: 'Bold', wrap: ['**', '**'], style: 'font-bold' },
-  { label: 'I', title: 'Italic', wrap: ['_', '_'], style: 'italic' },
-  { label: 'S', title: 'Strikethrough', wrap: ['~~', '~~'], style: 'line-through' },
-  { label: '<>', title: 'Code', wrap: ['`', '`'], style: 'font-mono text-xs' },
-];
-
-function getToken() {
-  return document.cookie.match(/(?:^|; )admin_token=([^;]*)/)?.[1]
-    ? decodeURIComponent(document.cookie.match(/(?:^|; )admin_token=([^;]*)/)[1])
-    : null;
-}
-
-// Markdown → HTML preview (for live preview in the composer)
-function renderMarkdown(text) {
-  if (!text) return '';
-  let esc = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return esc
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/~~(.*?)~~/g, '<s>$1</s>')
-    .replace(/_(.*?)_/g, '<em>$1</em>')
-    .replace(/`(.*?)`/g, '<code class="bg-black/20 px-1 rounded font-mono text-xs">$1</code>')
-    .replace(/\n/g, '<br/>');
-}
 
 const TARGET_OPTIONS = [
   { value: 'users', label: '👤 Semua Private Chat User', color: 'blue' },

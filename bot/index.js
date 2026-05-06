@@ -15,8 +15,7 @@ const groupMiddleware = require('./middlewares/groupMiddleware');
 const registerMenuHandler = require('./handlers/menuHandler');
 const { registerBetHandler, pendingBets, roundTracker } = require('./handlers/betHandler');
 const { registerDiceHandler } = require('./handlers/diceHandler');
-const { registerWalletHandler } = require('./handlers/walletHandler');
-const { registerInfoHandler } = require('./handlers/infoHandler');
+
 const { registerGroupGameManager } = require('./handlers/groupGameManager');
 const { registerTransferHandler } = require('./handlers/transferHandler');
 const { registerAngpaoHandler } = require('./handlers/angpaoHandler');
@@ -37,16 +36,15 @@ if (!mongoUri) {
 const bot = new Telegraf(botToken);
 
 // Connect MongoDB — semua handler dan bot.launch harus di dalam .then()
-mongoose.connect(mongoUri)
+console.log('⏳ Bot connecting to MongoDB...');
+mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 10000 })
   .then(async () => {
-    console.log('✅ Connected to MongoDB');
+    console.log('✅ Bot connected to MongoDB');
     const settingsService = require('../api/services/settingsService');
     await settingsService.loadSettings();
 
     // Register all handlers (setelah DB ready)
     registerMenuHandler(bot);
-    registerInfoHandler(bot);
-    registerWalletHandler(bot);
     registerBetHandler(bot);
     registerDiceHandler(bot, pendingBets, roundTracker);
     registerGroupGameManager(bot);
@@ -159,6 +157,6 @@ bot.on('my_chat_member', async (ctx) => {
 });
 
 // Graceful shutdown
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+process.once('SIGINT', () => { try { bot.stop('SIGINT'); } catch(e) {} process.exit(0); });
+process.once('SIGTERM', () => { try { bot.stop('SIGTERM'); } catch(e) {} process.exit(0); });
 

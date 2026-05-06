@@ -1,5 +1,4 @@
 const User = require('../../api/models/User');
-const Group = require('../../api/models/Group');
 const Angpao = require('../../api/models/Angpao');
 const crypto = require('crypto');
 const settingsService = require('../../api/services/settingsService');

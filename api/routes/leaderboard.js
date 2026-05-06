@@ -4,25 +4,10 @@ const Bet = require('../models/Bet');
 const User = require('../models/User');
 const Deposit = require('../models/Deposit');
 const authMiddleware = require('../middlewares/authMiddleware');
-const crypto = require('crypto');
-
-function verifyTelegramInitData(initData) {
-  try {
-    const urlParams = new URLSearchParams(initData);
-    const hash = urlParams.get('hash');
-    urlParams.delete('hash');
-    const dataCheckString = Array.from(urlParams.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${k}=${v}`)
-      .join('\n');
-    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(process.env.BOT_TOKEN).digest();
-    const expectedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
-    return hash === expectedHash;
-  } catch { return false; }
-}
+const { verifyTelegramInitData } = require('../utils/verifyTelegram');
 
 // Censor Helper
-function censorName(username, fallback) {
+function censorName(username) {
   if (!username) return 'Anonim';
   if (username.length <= 4) return username.substring(0, 1) + '***';
   return username.substring(0, username.length - 4) + '****';

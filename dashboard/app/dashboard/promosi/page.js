@@ -1,15 +1,10 @@
 'use client';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
+import { getToken } from '@/lib/auth';
 import DataTable from '@/components/DataTable';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
-function getToken() {
-  return document.cookie.match(/(?:^|; )admin_token=([^;]*)/)?.[1]
-    ? decodeURIComponent(document.cookie.match(/(?:^|; )admin_token=([^;]*)/)[1])
-    : null;
-}
 
 export default function PromosiPage() {
   const [promotions, setPromotions] = useState([]);
